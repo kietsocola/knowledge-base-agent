@@ -3,26 +3,28 @@
  * Run once: npx tsx scripts/init-local-db.ts
  */
 import { createClient } from "@libsql/client"
-import { readFileSync } from "fs"
+import { readdirSync, readFileSync } from "fs"
 import { join } from "path"
 
 const client = createClient({ url: "file:./local.db" })
 
 async function run() {
-  const migrationSql = readFileSync(
-    join(process.cwd(), "drizzle/migrations/0000_cloudy_doctor_spectrum.sql"),
-    "utf8"
-  )
+  const migrationsDir = join(process.cwd(), "drizzle/migrations")
+  const migrationFiles = readdirSync(migrationsDir)
+    .filter((name) => name.endsWith(".sql"))
+    .sort()
 
-  // Split on drizzle statement-breakpoint marker
-  const statements = migrationSql
-    .split("--> statement-breakpoint")
-    .map((s) => s.trim())
-    .filter(Boolean)
+  for (const fileName of migrationFiles) {
+    const migrationSql = readFileSync(join(migrationsDir, fileName), "utf8")
+    const statements = migrationSql
+      .split("--> statement-breakpoint")
+      .map((s) => s.trim())
+      .filter(Boolean)
 
-  console.log(`Applying ${statements.length} migration statements...`)
-  for (const sql of statements) {
-    await client.execute(sql)
+    console.log(`Applying ${fileName} (${statements.length} statements)...`)
+    for (const sql of statements) {
+      await client.execute(sql)
+    }
   }
 
   // Seed demo data
