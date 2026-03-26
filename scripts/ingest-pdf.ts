@@ -20,12 +20,52 @@
 import fs from "fs";
 import path from "path";
 import { randomUUID } from "crypto";
+import { loadEnvConfig } from "@next/env";
 
-// Lazy import — pdf-parse has mixed CJS/ESM, require works reliably
+type PdfParseResult = { text: string; numpages: number };
+
+// Lazy import - pdf-parse has mixed CJS/ESM + API differences across versions.
 async function loadDeps() {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const pdfParse = require("pdf-parse") as (buffer: Buffer) => Promise<{ text: string; numpages: number }>;
-  return { pdfParse };
+  const mod = require("pdf-parse") as
+    | ((buffer: Buffer) => Promise<PdfParseResult>)
+    | {
+        default?: unknown;
+        PDFParse?: new (opts: { data: Uint8Array }) => {
+          getText: () => Promise<{ text: string; total: number }>;
+          destroy?: () => Promise<void>;
+        };
+      };
+
+  if (typeof mod === "function") {
+    return { parsePdf: (buffer: Buffer) => mod(buffer) };
+  }
+
+  const PDFParseCtor =
+    (mod as { PDFParse?: unknown }).PDFParse ??
+    (mod as { default?: { PDFParse?: unknown } }).default?.PDFParse;
+
+  if (typeof PDFParseCtor === "function") {
+    return {
+      parsePdf: async (buffer: Buffer): Promise<PdfParseResult> => {
+        const parser = new (PDFParseCtor as new (opts: { data: Uint8Array }) => {
+          getText: () => Promise<{ text: string; total: number }>;
+          destroy?: () => Promise<void>;
+        })({ data: new Uint8Array(buffer) });
+
+        try {
+          const textResult = await parser.getText();
+          return { text: textResult.text, numpages: textResult.total };
+        } finally {
+          if (typeof parser.destroy === "function") {
+            await parser.destroy().catch(() => undefined);
+          }
+        }
+      },
+    };
+  }
+
+  throw new Error('Unsupported pdf-parse export shape. Expected function export or class "PDFParse".');
 }
 
 interface ChunkResult {
@@ -148,7 +188,32 @@ async function insertD1Document(
   if (!res.ok) throw new Error(`D1 doc insert error: ${res.status} ${await res.text()}`);
 }
 
+async function upsertD1Course(
+  accountId: string,
+  dbId: string,
+  apiToken: string,
+  course: { id: string; title: string; ltiIss: string }
+): Promise<void> {
+  const url = `https://api.cloudflare.com/client/v4/accounts/${accountId}/d1/database/${dbId}/query`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiToken}`,
+    },
+    body: JSON.stringify({
+      sql: `INSERT OR REPLACE INTO courses (id, title, lti_iss)
+            VALUES (?, ?, ?)`,
+      params: [course.id, course.title, course.ltiIss],
+    }),
+  });
+  if (!res.ok) throw new Error(`D1 course upsert error: ${res.status} ${await res.text()}`);
+}
+
 async function main() {
+  // Ensure Next-style env files (.env.local, .env) are loaded for this standalone script.
+  loadEnvConfig(process.cwd());
+
   // Parse CLI args
   const args = process.argv.slice(2);
   const get = (flag: string) => {
@@ -158,6 +223,8 @@ async function main() {
 
   const pdfPath = get("--pdf");
   const courseId = get("--course") ?? "course-ctdl-001";
+  const courseTitle = get("--course-title") ?? courseId;
+  const courseIss = get("--course-iss") ?? "https://mock-moodle.demo.edu.vn";
   const docName = get("--doc-name") ?? "Tài liệu";
   const docId = get("--doc-id") ?? randomUUID();
 
@@ -179,11 +246,18 @@ async function main() {
   }
 
   console.log(`\n📄 Loading PDF: ${pdfPath}`);
-  const { pdfParse } = await loadDeps();
+  const { parsePdf } = await loadDeps();
   const pdfBuffer = fs.readFileSync(pdfPath);
-  const pdfData = await pdfParse(pdfBuffer);
+  const pdfData = await parsePdf(pdfBuffer);
 
   console.log(`   Pages: ${pdfData.numpages}, Text length: ${pdfData.text.length} chars`);
+
+  // Ensure course exists first to satisfy documents.course_id foreign key.
+  await upsertD1Course(cfAccount, cfD1Id, cfApiToken, {
+    id: courseId,
+    title: courseTitle,
+    ltiIss: courseIss,
+  });
 
   // Insert document record in D1
   console.log(`\n💾 Inserting document record in D1...`);
