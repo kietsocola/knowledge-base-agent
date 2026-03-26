@@ -1,7 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // Needed for @opennextjs/cloudflare
+  // Do not add 'output: edge' here - opennext handles it
 };
 
 export default nextConfig;
