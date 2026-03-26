@@ -25,6 +25,7 @@ export interface LTILaunchClaims {
 export interface SessionData {
   studentId: string;
   courseId: string;
+  courseName: string;
   sessionId: string;
   displayName: string;
 }

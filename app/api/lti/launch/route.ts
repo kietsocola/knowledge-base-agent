@@ -107,6 +107,7 @@ export async function POST(request: Request) {
     const ironSession = await getIronSession<SessionData>(cookieStore, SESSION_OPTIONS)
     ironSession.studentId = studentId
     ironSession.courseId = courseId
+    ironSession.courseName = courseTitle
     ironSession.sessionId = sessionId
     ironSession.displayName = studentName
     await ironSession.save()

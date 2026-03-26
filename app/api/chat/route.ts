@@ -1,3 +1,4 @@
+// Edge runtime: import ONLY edge-safe modules (no @libsql/client)
 import {
   streamText,
   createUIMessageStream,
@@ -6,7 +7,7 @@ import {
 } from "ai"
 import { eq, asc } from "drizzle-orm"
 import { getCloudflareContext } from "@opennextjs/cloudflare"
-import { getCloudflareDb } from "@/lib/db/index"
+import { getCloudflareDb } from "@/lib/db/cloudflare"
 import { messages, chatSessions } from "@/lib/db/schema"
 import { getOpenAI, CHAT_MODEL } from "@/lib/llm/client"
 import { buildChatSystemPrompt } from "@/lib/llm/prompts"
@@ -29,7 +30,7 @@ export async function POST(request: Request) {
   const apiKey = process.env.OPENAI_API_KEY!
   const openai = getOpenAI()
 
-  // Convert UI messages (from @ai-sdk/react useChat) to model messages
+  // Convert UI messages to model messages
   const modelMessages = await convertToModelMessages(
     body.messages as Parameters<typeof convertToModelMessages>[0]
   )
@@ -53,7 +54,7 @@ export async function POST(request: Request) {
     const vector = await embedText(lastUserText, apiKey)
     contextChunks = await retrieveRelevantChunks(vector, courseId, env.VECTORIZE, db)
   } catch {
-    // CF bindings not available (local dev without wrangler) — proceed without RAG
+    // CF bindings not available (local dev) — proceed without RAG
   }
 
   const contextStr = formatContextForPrompt(contextChunks)
@@ -72,10 +73,8 @@ export async function POST(request: Request) {
         messages: modelMessages,
       })
 
-      // Pipe LLM stream into UI message stream
       writer.merge(result.toUIMessageStream())
 
-      // Wait for full text to complete
       const fullText = await result.text
 
       // Write citations as message metadata
@@ -90,7 +89,7 @@ export async function POST(request: Request) {
       // ─── Persist to D1 (background) ─────────────────────────────────
       if (db && sessionId) {
         const now = Math.floor(Date.now() / 1000)
-        const persistPromise = (async () => {
+        const persist = (async () => {
           await db!.insert(messages).values({
             id: crypto.randomUUID(),
             sessionId,
@@ -111,7 +110,6 @@ export async function POST(request: Request) {
             .set({ updatedAt: now + 1 })
             .where(eq(chatSessions.id, sessionId))
 
-          // Check if we should trigger evaluation (every 4 user messages)
           const allMsgs = await db!
             .select({ role: messages.role })
             .from(messages)
@@ -126,7 +124,7 @@ export async function POST(request: Request) {
             })
           }
         })()
-        persistPromise.catch(console.error)
+        persist.catch(console.error)
       }
     },
   })
