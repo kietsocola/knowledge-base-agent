@@ -1,8 +1,9 @@
 import { getCloudflareContext } from "@opennextjs/cloudflare"
-import { eq, asc } from "drizzle-orm"
+import { eq, asc, desc } from "drizzle-orm"
 import { getCloudflareDb, getDb } from "@/lib/db/index"
 import { messages, chatSessions, courses, evaluations } from "@/lib/db/schema"
 import { generateEvaluation } from "@/lib/llm/evaluator"
+import type { EvaluationResult } from "@/types/evaluation"
 
 export async function POST(request: Request) {
   try {
@@ -38,6 +39,31 @@ export async function POST(request: Request) {
       .where(eq(courses.id, session.courseId!))
       .limit(1)
 
+    // ─── Check cached evaluation ─────────────────────────────────────────────
+    const [cached] = await db
+      .select()
+      .from(evaluations)
+      .where(eq(evaluations.sessionId, sessionId))
+      .orderBy(desc(evaluations.createdAt))
+      .limit(1)
+
+    if (cached) {
+      // If full result was stored, return it directly
+      if (cached.resultJson) {
+        return Response.json(JSON.parse(cached.resultJson) as EvaluationResult)
+      }
+      // Fallback for old rows that only have individual columns
+      const cachedResult: EvaluationResult = {
+        radarScores: JSON.parse(cached.radarScores ?? "{}"),
+        strengths: JSON.parse(cached.strengths ?? "[]"),
+        gaps: JSON.parse(cached.gaps ?? "[]"),
+        overallScore: cached.overallScore ?? 0,
+        recommendedTopics: [],
+        nextStepMessage: "Tiếp tục ôn luyện để cải thiện kết quả.",
+      }
+      return Response.json(cachedResult)
+    }
+
     // ─── Fetch messages ──────────────────────────────────────────────────────
     const sessionMessages = await db
       .select({ role: messages.role, content: messages.content })
@@ -70,6 +96,7 @@ export async function POST(request: Request) {
       strengths: JSON.stringify(result.strengths),
       gaps: JSON.stringify(result.gaps),
       overallScore: result.overallScore,
+      resultJson: JSON.stringify(result),
       createdAt: now,
     })
 

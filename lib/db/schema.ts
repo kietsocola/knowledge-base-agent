@@ -62,6 +62,7 @@ export const evaluations = sqliteTable("evaluations", {
   strengths: text("strengths"), // JSON array
   gaps: text("gaps"), // JSON array
   overallScore: real("overall_score"),
+  resultJson: text("result_json"), // full EvaluationResult JSON (added later)
   createdAt: integer("created_at").default(sql`(unixepoch())`),
 });
 

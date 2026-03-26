@@ -1,4 +1,3 @@
-// Edge runtime: import ONLY edge-safe modules (no @libsql/client)
 import {
   streamText,
   createUIMessageStream,
@@ -7,7 +6,7 @@ import {
 } from "ai"
 import { eq, asc } from "drizzle-orm"
 import { getCloudflareContext } from "@opennextjs/cloudflare"
-import { getCloudflareDb } from "@/lib/db/cloudflare"
+import { getCloudflareDb, getDb } from "@/lib/db/index"
 import { messages, chatSessions } from "@/lib/db/schema"
 import { getOpenAI, CHAT_MODEL } from "@/lib/llm/client"
 import { buildChatSystemPrompt } from "@/lib/llm/prompts"
@@ -15,8 +14,6 @@ import { parseCitations, formatContextForPrompt } from "@/lib/llm/citations"
 import { embedText } from "@/lib/rag/embedder"
 import { retrieveRelevantChunks } from "@/lib/rag/retriever"
 import type { RetrievedChunk } from "@/lib/rag/retriever"
-
-export const runtime = "edge"
 
 export async function POST(request: Request) {
   const body = await request.json() as {
@@ -43,18 +40,20 @@ export async function POST(request: Request) {
       : (lastUserMsg?.content as Array<{ type: string; text?: string }>)
           ?.find((p) => p.type === "text")?.text ?? ""
 
-  // ─── RAG: embed + retrieve (requires CF bindings) ─────────────────────────
+  // ─── DB: try CF D1, fallback to local libsql ──────────────────────────────
   let contextChunks: RetrievedChunk[] = []
-  let db: ReturnType<typeof getCloudflareDb> | null = null
+  let db: ReturnType<typeof getCloudflareDb> | ReturnType<typeof getDb>
 
   try {
     const { env } = getCloudflareContext()
     db = getCloudflareDb(env.DB)
 
+    // RAG only available with CF Vectorize binding
     const vector = await embedText(lastUserText, apiKey)
-    contextChunks = await retrieveRelevantChunks(vector, courseId, env.VECTORIZE, db)
+    contextChunks = await retrieveRelevantChunks(vector, courseId, env.VECTORIZE, db as ReturnType<typeof getCloudflareDb>)
   } catch {
-    // CF bindings not available (local dev) — proceed without RAG
+    // CF bindings not available (local dev) — use local SQLite, skip RAG
+    db = getDb()
   }
 
   const contextStr = formatContextForPrompt(contextChunks)
@@ -86,8 +85,8 @@ export async function POST(request: Request) {
         })
       }
 
-      // ─── Persist to D1 (background) ─────────────────────────────────
-      if (db && sessionId) {
+      // ─── Persist to DB (background) ──────────────────────────────────
+      if (sessionId) {
         const now = Math.floor(Date.now() / 1000)
         const persist = (async () => {
           await db!.insert(messages).values({
