@@ -4,15 +4,20 @@ import {
   createUIMessageStreamResponse,
   convertToModelMessages,
 } from "ai"
+import { cookies } from "next/headers"
+import { getIronSession } from "iron-session"
 import { eq, asc } from "drizzle-orm"
 import { getDb } from "@/lib/db/index"
-import { messages, chatSessions } from "@/lib/db/schema"
+import { messages, chatSessions, courses } from "@/lib/db/schema"
 import { getOpenAI, CHAT_MODEL } from "@/lib/llm/client"
 import { buildChatSystemPrompt } from "@/lib/llm/prompts"
 import { parseCitations, formatContextForPrompt } from "@/lib/llm/citations"
 import { embedText } from "@/lib/rag/embedder"
 import { retrieveRelevantChunks } from "@/lib/rag/retriever"
 import type { RetrievedChunk } from "@/lib/rag/retriever"
+import { SESSION_OPTIONS } from "@/lib/session"
+import { authorizeOwnedSession, validateRequestedCourse } from "@/lib/security/session-authorization"
+import type { SessionData } from "@/types/lti"
 
 export async function POST(request: Request) {
   const body = await request.json() as {
@@ -40,19 +45,45 @@ export async function POST(request: Request) {
           ?.find((p) => p.type === "text")?.text ?? ""
 
   const db = getDb()
+  const cookieStore = await cookies()
+  const session = await getIronSession<SessionData>(cookieStore, SESSION_OPTIONS)
+
+  const [targetSession] = await db
+    .select({
+      studentId: chatSessions.studentId,
+      courseId: chatSessions.courseId,
+      courseTitle: courses.title,
+    })
+    .from(chatSessions)
+    .leftJoin(courses, eq(courses.id, chatSessions.courseId))
+    .where(eq(chatSessions.id, sessionId))
+    .limit(1)
+
+  const access = authorizeOwnedSession(session, targetSession ?? null)
+  if (!access.ok) {
+    return Response.json({ error: access.error }, { status: access.status })
+  }
+
+  const trustedCourse = validateRequestedCourse(courseId, access.value.courseId)
+  if (!trustedCourse.ok) {
+    return Response.json({ error: trustedCourse.error }, { status: trustedCourse.status })
+  }
+
+  const trustedCourseId = trustedCourse.value
+  const trustedCourseName = targetSession?.courseTitle ?? courseName ?? session.courseName ?? "môn học"
 
   // RAG: embed query and retrieve relevant chunks from Supabase pgvector
   let contextChunks: RetrievedChunk[] = []
   try {
     const vector = await embedText(lastUserText, apiKey)
-    contextChunks = await retrieveRelevantChunks(vector, courseId, db)
+    contextChunks = await retrieveRelevantChunks(vector, trustedCourseId, db)
   } catch (err) {
     console.warn("RAG retrieval failed, continuing without context:", err)
   }
 
   const contextStr = formatContextForPrompt(contextChunks)
   const systemPrompt =
-    buildChatSystemPrompt(courseName ?? "môn học") +
+    buildChatSystemPrompt(trustedCourseName) +
     (contextStr
       ? `\n\n## Tài liệu tham khảo:\n\n${contextStr}`
       : "\n\n## Lưu ý: Không tìm thấy tài liệu liên quan trong kho kiến thức.")

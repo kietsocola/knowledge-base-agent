@@ -1,8 +1,13 @@
+import { cookies } from "next/headers"
+import { getIronSession } from "iron-session"
 import { eq, asc, desc } from "drizzle-orm"
 import { getDb } from "@/lib/db/index"
 import { messages, chatSessions, courses, evaluations } from "@/lib/db/schema"
 import { generateEvaluation } from "@/lib/llm/evaluator"
+import { SESSION_OPTIONS } from "@/lib/session"
+import { authorizeOwnedSession } from "@/lib/security/session-authorization"
 import type { EvaluationResult } from "@/types/evaluation"
+import type { SessionData } from "@/types/lti"
 
 export async function POST(request: Request) {
   try {
@@ -14,22 +19,25 @@ export async function POST(request: Request) {
     }
 
     const db = getDb()
+    const cookieStore = await cookies()
+    const viewerSession = await getIronSession<SessionData>(cookieStore, SESSION_OPTIONS)
 
     // ─── Fetch session + course info ─────────────────────────────────────────
     const [session] = await db
-      .select({ courseId: chatSessions.courseId })
+      .select({ studentId: chatSessions.studentId, courseId: chatSessions.courseId })
       .from(chatSessions)
       .where(eq(chatSessions.id, sessionId))
       .limit(1)
 
-    if (!session) {
-      return Response.json({ error: "Session not found" }, { status: 404 })
+    const access = authorizeOwnedSession(viewerSession, session ?? null)
+    if (!access.ok) {
+      return Response.json({ error: access.error }, { status: access.status })
     }
 
     const [course] = await db
       .select({ title: courses.title })
       .from(courses)
-      .where(eq(courses.id, session.courseId!))
+      .where(eq(courses.id, access.value.courseId!))
       .limit(1)
 
     // ─── Check cached evaluation ─────────────────────────────────────────────
