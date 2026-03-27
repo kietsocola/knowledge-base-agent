@@ -6,6 +6,7 @@ import { getDb } from "@/lib/db/index"
 import { documents } from "@/lib/db/schema"
 import { parsePdf } from "@/lib/rag/pdf"
 import { SESSION_OPTIONS } from "@/lib/session"
+import { authorizeCourseScopedRequest } from "@/lib/security/course-scoped-access"
 import type { SessionData } from "@/types/lti"
 
 export const runtime = "nodejs"
@@ -76,7 +77,14 @@ export async function POST(request: Request) {
 
   const file = formData.get("file") as File | null
   const docName = ((formData.get("docName") as string | null) ?? "").trim() || "Tài liệu"
-  const courseId = (formData.get("courseId") as string | null) ?? session.courseId
+  const requestedCourseId = (formData.get("courseId") as string | null) ?? undefined
+  const courseAccess = authorizeCourseScopedRequest(session, requestedCourseId)
+
+  if (!courseAccess.ok) {
+    return Response.json({ error: courseAccess.error }, { status: courseAccess.status })
+  }
+
+  const courseId = courseAccess.value
 
   if (!file) return Response.json({ error: "Chưa có file" }, { status: 400 })
   if (!courseId) return Response.json({ error: "Thiếu courseId" }, { status: 400 })
