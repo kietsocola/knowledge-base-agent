@@ -1,6 +1,5 @@
-import { getCloudflareContext } from "@opennextjs/cloudflare"
 import { eq, asc, desc } from "drizzle-orm"
-import { getCloudflareDb, getDb } from "@/lib/db/index"
+import { getDb } from "@/lib/db/index"
 import { messages, chatSessions, courses, evaluations } from "@/lib/db/schema"
 import { generateEvaluation } from "@/lib/llm/evaluator"
 import type { EvaluationResult } from "@/types/evaluation"
@@ -14,13 +13,7 @@ export async function POST(request: Request) {
       return Response.json({ error: "sessionId required" }, { status: 400 })
     }
 
-    let db
-    try {
-      const { env } = getCloudflareContext()
-      db = getCloudflareDb(env.DB)
-    } catch {
-      db = getDb()
-    }
+    const db = getDb()
 
     // ─── Fetch session + course info ─────────────────────────────────────────
     const [session] = await db
@@ -48,11 +41,9 @@ export async function POST(request: Request) {
       .limit(1)
 
     if (cached) {
-      // If full result was stored, return it directly
       if (cached.resultJson) {
         return Response.json(JSON.parse(cached.resultJson) as EvaluationResult)
       }
-      // Fallback for old rows that only have individual columns
       const cachedResult: EvaluationResult = {
         radarScores: JSON.parse(cached.radarScores ?? "{}"),
         strengths: JSON.parse(cached.strengths ?? "[]"),
@@ -84,7 +75,7 @@ export async function POST(request: Request) {
       course?.title ?? "môn học"
     )
 
-    // ─── Persist to D1 ───────────────────────────────────────────────────────
+    // ─── Persist to Supabase ──────────────────────────────────────────────────
     const evalId = crypto.randomUUID()
     const now = Math.floor(Date.now() / 1000)
 

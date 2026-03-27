@@ -1,8 +1,7 @@
 import { cookies } from "next/headers"
 import { getIronSession } from "iron-session"
-import { getCloudflareContext } from "@opennextjs/cloudflare"
 import { eq } from "drizzle-orm"
-import { getCloudflareDb, getDb } from "@/lib/db/index"
+import { getDb } from "@/lib/db/index"
 import { students, courses, chatSessions } from "@/lib/db/schema"
 import { MOCK_STUDENTS, MOCK_COURSES } from "@/lib/lti/mock"
 import { validateLTIToken } from "@/lib/lti/validator"
@@ -53,14 +52,7 @@ export async function POST(request: Request) {
       return Response.json({ error: "Missing id_token or mock params" }, { status: 400 })
     }
 
-    // ─── Get DB ──────────────────────────────────────────────────────────────
-    let db
-    try {
-      const { env } = getCloudflareContext()
-      db = getCloudflareDb(env.DB)
-    } catch {
-      db = getDb()
-    }
+    const db = getDb()
 
     // ─── Upsert student ──────────────────────────────────────────────────────
     const now = Math.floor(Date.now() / 1000)

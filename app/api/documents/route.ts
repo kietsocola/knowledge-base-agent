@@ -1,6 +1,5 @@
 import { NextRequest } from "next/server"
-import { getCloudflareContext } from "@opennextjs/cloudflare"
-import { getCloudflareDb, getDb } from "@/lib/db/index"
+import { getDb } from "@/lib/db/index"
 import { documents } from "@/lib/db/schema"
 import { eq } from "drizzle-orm"
 
@@ -10,14 +9,7 @@ export async function GET(request: NextRequest) {
     return Response.json({ error: "courseId required" }, { status: 400 })
   }
 
-  let db
-  try {
-    const { env } = getCloudflareContext()
-    db = getCloudflareDb(env.DB)
-  } catch {
-    db = getDb()
-  }
-
+  const db = getDb()
   const docs = await db
     .select({
       id: documents.id,

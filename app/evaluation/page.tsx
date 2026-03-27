@@ -4,8 +4,7 @@ import { redirect } from "next/navigation"
 import { eq } from "drizzle-orm"
 import { SESSION_OPTIONS } from "@/lib/session"
 import { EvaluationLoader } from "@/components/evaluation/EvaluationLoader"
-import { getCloudflareContext } from "@opennextjs/cloudflare"
-import { getCloudflareDb, getDb } from "@/lib/db/index"
+import { getDb } from "@/lib/db/index"
 import { chatSessions } from "@/lib/db/schema"
 import type { SessionData } from "@/types/lti"
 
@@ -27,16 +26,10 @@ export default async function EvaluationPage({ searchParams }: Props) {
     redirect("/portal")
   }
 
-  let db
-  try {
-    const { env } = getCloudflareContext()
-    db = getCloudflareDb(env.DB)
-  } catch {
-    db = getDb()
-  }
+  const db = getDb()
 
   // Use query param sessionId if provided, otherwise fall back to cookie's session
-  let targetSessionId = querySessionId ?? session.sessionId
+  const targetSessionId = querySessionId ?? session.sessionId
 
   if (!targetSessionId) {
     redirect("/portal")

@@ -1,28 +1,29 @@
-import { drizzle } from "drizzle-orm/libsql";
+import { drizzle } from "drizzle-orm/postgres-js";
+import postgres from "postgres";
 import * as schema from "./schema";
 
-// In Cloudflare Workers, we use the D1 binding via getCloudflareContext().
-// For local `next dev`, we use a local SQLite file via libsql.
-// The Drizzle schema is identical in both cases.
+// Single DB client for both local dev and Vercel production.
+// Set DATABASE_URL in .env.local (local) or Vercel environment variables (production).
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
 export function getDb() {
   if (_db) return _db;
 
-  // Local dev fallback using libsql (file-based SQLite)
-  const { createClient } = require("@libsql/client");
-  const client = createClient({
-    url: "file:./local.db",
+  const connectionString = process.env.DATABASE_URL;
+  if (!connectionString) {
+    throw new Error("DATABASE_URL environment variable is not set");
+  }
+
+  const client = postgres(connectionString, {
+    // Vercel serverless: disable connection pooling (each invocation is short-lived)
+    max: 1,
+    idle_timeout: 20,
+    connect_timeout: 10,
   });
+
   _db = drizzle(client, { schema });
   return _db;
 }
 
-// For Cloudflare Workers runtime — pass the D1 binding directly
-export function getCloudflareDb(d1: D1Database) {
-  const { drizzle: drizzleD1 } = require("drizzle-orm/d1");
-  return drizzleD1(d1, { schema });
-}
-
-export type DB = ReturnType<typeof getCloudflareDb>;
+export type DB = ReturnType<typeof getDb>;

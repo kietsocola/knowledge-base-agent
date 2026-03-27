@@ -4,8 +4,7 @@ import { redirect } from "next/navigation"
 import { eq, asc, desc, and, sql } from "drizzle-orm"
 import { SESSION_OPTIONS } from "@/lib/session"
 import { ChatInterface } from "@/components/chat/ChatInterface"
-import { getCloudflareContext } from "@opennextjs/cloudflare"
-import { getCloudflareDb, getDb } from "@/lib/db/index"
+import { getDb } from "@/lib/db/index"
 import { messages, chatSessions } from "@/lib/db/schema"
 import type { SessionData } from "@/types/lti"
 
@@ -24,13 +23,7 @@ export default async function ChatPage({ params }: Props) {
     redirect("/portal")
   }
 
-  let db
-  try {
-    const { env } = getCloudflareContext()
-    db = getCloudflareDb(env.DB)
-  } catch {
-    db = getDb()
-  }
+  const db = getDb()
 
   // Verify this session belongs to the current student
   const [targetSession] = await db

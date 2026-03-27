@@ -1,30 +1,28 @@
 /**
- * Offline PDF ingestion script.
- * Run ONCE before the demo to populate Vectorize + D1.
+ * Offline PDF ingestion script — Supabase + pgvector version.
+ * Run ONCE before the demo to populate Supabase with document chunks and embeddings.
  *
  * Usage:
  *   npx tsx scripts/ingest-pdf.ts \
  *     --pdf ./public/sample-docs/giao-trinh-ctdl.pdf \
  *     --course course-ctdl-001 \
+ *     --course-title "Cấu Trúc Dữ Liệu" \
  *     --doc-name "Giáo trình CTDL" \
  *     --doc-id doc-ctdl-001
  *
- * Required env vars (in .env.local or shell):
+ * Required env vars (in .env.local):
  *   OPENAI_API_KEY
- *   CLOUDFLARE_ACCOUNT_ID
- *   CLOUDFLARE_VECTORIZE_INDEX=kb-embeddings
- *   CLOUDFLARE_API_TOKEN       (needs Workers AI + Vectorize + D1 permissions)
- *   CLOUDFLARE_D1_DATABASE_ID
+ *   DATABASE_URL  (Supabase PostgreSQL connection string)
  */
 
 import fs from "fs";
 import path from "path";
 import { randomUUID } from "crypto";
 import { loadEnvConfig } from "@next/env";
+import postgres from "postgres";
 
 type PdfParseResult = { text: string; numpages: number };
 
-// Lazy import - pdf-parse has mixed CJS/ESM + API differences across versions.
 async function loadDeps() {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const mod = require("pdf-parse") as
@@ -65,39 +63,23 @@ async function loadDeps() {
     };
   }
 
-  throw new Error('Unsupported pdf-parse export shape. Expected function export or class "PDFParse".');
+  throw new Error('Unsupported pdf-parse export shape.');
 }
 
-interface ChunkResult {
-  id: string;
-  text: string;
-  pageNumber: number;
-  chunkIndex: number;
-}
-
-/**
- * Simple character-based chunking with overlap.
- * chunkSize ~512 tokens ≈ 2048 chars; overlap ~64 tokens ≈ 256 chars
- */
 function chunkText(
   text: string,
-  pageNumber: number,
   chunkSize = 2000,
   overlap = 200
-): Array<{ text: string; pageNumber: number }> {
-  const chunks: Array<{ text: string; pageNumber: number }> = [];
+): string[] {
+  const chunks: string[] = [];
   let start = 0;
-
   while (start < text.length) {
     const end = Math.min(start + chunkSize, text.length);
     const chunk = text.slice(start, end).trim();
-    if (chunk.length > 50) {
-      chunks.push({ text: chunk, pageNumber });
-    }
+    if (chunk.length > 50) chunks.push(chunk);
     if (end >= text.length) break;
     start += chunkSize - overlap;
   }
-
   return chunks;
 }
 
@@ -110,111 +92,18 @@ async function embedText(text: string, apiKey: string): Promise<number[]> {
     },
     body: JSON.stringify({
       model: "text-embedding-3-small",
-      input: text.slice(0, 8000), // max input length safeguard
+      input: text.slice(0, 8000),
       dimensions: 768,
     }),
   });
-
   if (!res.ok) throw new Error(`Embed error: ${res.status} ${await res.text()}`);
   const data = (await res.json()) as { data: Array<{ embedding: number[] }> };
   return data.data[0].embedding;
 }
 
-async function upsertVectorize(
-  accountId: string,
-  indexName: string,
-  apiToken: string,
-  vectors: Array<{ id: string; values: number[]; metadata: Record<string, unknown> }>
-): Promise<void> {
-  const url = `https://api.cloudflare.com/client/v4/accounts/${accountId}/vectorize/v2/indexes/${indexName}/upsert`;
-  const res = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/x-ndjson",
-      Authorization: `Bearer ${apiToken}`,
-    },
-    body: vectors.map((v) => JSON.stringify(v)).join("\n"),
-  });
-  if (!res.ok) throw new Error(`Vectorize upsert error: ${res.status} ${await res.text()}`);
-}
-
-async function insertD1Chunk(
-  accountId: string,
-  dbId: string,
-  apiToken: string,
-  chunk: {
-    id: string;
-    documentId: string;
-    chunkIndex: number;
-    chunkText: string;
-    pageNumber: number;
-  }
-): Promise<void> {
-  const url = `https://api.cloudflare.com/client/v4/accounts/${accountId}/d1/database/${dbId}/query`;
-  const res = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiToken}`,
-    },
-    body: JSON.stringify({
-      sql: `INSERT OR REPLACE INTO document_chunks (id, document_id, chunk_index, chunk_text, page_number)
-            VALUES (?, ?, ?, ?, ?)`,
-      params: [chunk.id, chunk.documentId, chunk.chunkIndex, chunk.chunkText, chunk.pageNumber],
-    }),
-  });
-  if (!res.ok) throw new Error(`D1 insert error: ${res.status} ${await res.text()}`);
-}
-
-async function insertD1Document(
-  accountId: string,
-  dbId: string,
-  apiToken: string,
-  doc: { id: string; courseId: string; name: string; pageCount: number }
-): Promise<void> {
-  const url = `https://api.cloudflare.com/client/v4/accounts/${accountId}/d1/database/${dbId}/query`;
-  const res = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiToken}`,
-    },
-    body: JSON.stringify({
-      sql: `INSERT OR REPLACE INTO documents (id, course_id, name, page_count)
-            VALUES (?, ?, ?, ?)`,
-      params: [doc.id, doc.courseId, doc.name, doc.pageCount],
-    }),
-  });
-  if (!res.ok) throw new Error(`D1 doc insert error: ${res.status} ${await res.text()}`);
-}
-
-async function upsertD1Course(
-  accountId: string,
-  dbId: string,
-  apiToken: string,
-  course: { id: string; title: string; ltiIss: string }
-): Promise<void> {
-  const url = `https://api.cloudflare.com/client/v4/accounts/${accountId}/d1/database/${dbId}/query`;
-  const res = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiToken}`,
-    },
-    body: JSON.stringify({
-      sql: `INSERT OR REPLACE INTO courses (id, title, lti_iss)
-            VALUES (?, ?, ?)`,
-      params: [course.id, course.title, course.ltiIss],
-    }),
-  });
-  if (!res.ok) throw new Error(`D1 course upsert error: ${res.status} ${await res.text()}`);
-}
-
 async function main() {
-  // Ensure Next-style env files (.env.local, .env) are loaded for this standalone script.
   loadEnvConfig(process.cwd());
 
-  // Parse CLI args
   const args = process.argv.slice(2);
   const get = (flag: string) => {
     const i = args.indexOf(flag);
@@ -233,106 +122,83 @@ async function main() {
     process.exit(1);
   }
 
-  // Load env
   const openaiKey = process.env.OPENAI_API_KEY;
-  const cfAccount = process.env.CLOUDFLARE_ACCOUNT_ID;
-  const cfVectorizeIndex = process.env.CLOUDFLARE_VECTORIZE_INDEX ?? "kb-embeddings";
-  const cfApiToken = process.env.CLOUDFLARE_API_TOKEN;
-  const cfD1Id = process.env.CLOUDFLARE_D1_DATABASE_ID;
+  const databaseUrl = process.env.DATABASE_URL;
 
-  if (!openaiKey || !cfAccount || !cfApiToken || !cfD1Id) {
-    console.error("Missing required env vars: OPENAI_API_KEY, CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_API_TOKEN, CLOUDFLARE_D1_DATABASE_ID");
+  if (!openaiKey || !databaseUrl) {
+    console.error("Missing required env vars: OPENAI_API_KEY, DATABASE_URL");
     process.exit(1);
   }
 
-  console.log(`\n📄 Loading PDF: ${pdfPath}`);
-  const { parsePdf } = await loadDeps();
-  const pdfBuffer = fs.readFileSync(pdfPath);
-  const pdfData = await parsePdf(pdfBuffer);
+  const sql = postgres(databaseUrl, { max: 1 });
 
-  console.log(`   Pages: ${pdfData.numpages}, Text length: ${pdfData.text.length} chars`);
+  try {
+    console.log(`\n📄 Loading PDF: ${pdfPath}`);
+    const { parsePdf } = await loadDeps();
+    const pdfBuffer = fs.readFileSync(pdfPath);
+    const pdfData = await parsePdf(pdfBuffer);
+    console.log(`   Pages: ${pdfData.numpages}, Text length: ${pdfData.text.length} chars`);
 
-  // Ensure course exists first to satisfy documents.course_id foreign key.
-  await upsertD1Course(cfAccount, cfD1Id, cfApiToken, {
-    id: courseId,
-    title: courseTitle,
-    ltiIss: courseIss,
-  });
+    // Ensure course exists
+    await sql`
+      INSERT INTO courses (id, title, lti_iss)
+      VALUES (${courseId}, ${courseTitle}, ${courseIss})
+      ON CONFLICT (id) DO NOTHING
+    `;
 
-  // Insert document record in D1
-  console.log(`\n💾 Inserting document record in D1...`);
-  await insertD1Document(cfAccount, cfD1Id, cfApiToken, {
-    id: docId,
-    courseId,
-    name: docName,
-    pageCount: pdfData.numpages,
-  });
+    // Insert document record
+    console.log(`\n💾 Inserting document record...`);
+    await sql`
+      INSERT INTO documents (id, course_id, name, page_count)
+      VALUES (${docId}, ${courseId}, ${docName}, ${pdfData.numpages})
+      ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, page_count = EXCLUDED.page_count
+    `;
 
-  // Chunk text per page
-  const allChunks: ChunkResult[] = [];
-  // pdf-parse gives us full text; we'll chunk the whole text with page approximation
-  const rawChunks = chunkText(pdfData.text, 1, 2000, 200);
+    // Chunk text
+    const rawChunks = chunkText(pdfData.text, 2000, 200);
+    console.log(`\n🔪 Chunked into ${rawChunks.length} chunks`);
 
-  // Approximate page numbers (simple distribution)
-  const totalChunks = rawChunks.length;
-  rawChunks.forEach((c, i) => {
-    const approxPage = Math.ceil((i / totalChunks) * pdfData.numpages) || 1;
-    allChunks.push({
-      id: randomUUID(),
-      text: c.text,
-      pageNumber: approxPage,
-      chunkIndex: i,
-    });
-  });
+    const BATCH_SIZE = 10;
+    let processed = 0;
 
-  console.log(`\n🔪 Chunked into ${allChunks.length} chunks`);
+    for (let i = 0; i < rawChunks.length; i += BATCH_SIZE) {
+      const batch = rawChunks.slice(i, i + BATCH_SIZE);
+      const approxPageFactor = pdfData.numpages / rawChunks.length;
 
-  // Process in batches of 10 (rate limit friendly)
-  const BATCH_SIZE = 10;
-  let processed = 0;
+      await Promise.all(
+        batch.map(async (chunkText, batchIdx) => {
+          const globalIdx = i + batchIdx;
+          const chunkId = randomUUID();
+          const approxPage = Math.ceil((globalIdx + 1) * approxPageFactor) || 1;
+          const embedding = await embedText(chunkText, openaiKey);
+          const vectorLiteral = `[${embedding.join(",")}]`;
 
-  for (let i = 0; i < allChunks.length; i += BATCH_SIZE) {
-    const batch = allChunks.slice(i, i + BATCH_SIZE);
-
-    // Embed
-    const vectors = await Promise.all(
-      batch.map(async (chunk) => {
-        const embedding = await embedText(chunk.text, openaiKey);
-        return {
-          id: chunk.id,
-          values: embedding,
-          metadata: {
-            courseId,
-            documentId: docId,
-            pageNumber: chunk.pageNumber,
-            chunkIndex: chunk.chunkIndex,
-          },
-        };
-      })
-    );
-
-    // Upsert Vectorize
-    await upsertVectorize(cfAccount, cfVectorizeIndex, cfApiToken, vectors);
-
-    // Insert D1
-    await Promise.all(
-      batch.map((chunk) =>
-        insertD1Chunk(cfAccount, cfD1Id, cfApiToken, {
-          id: chunk.id,
-          documentId: docId,
-          chunkIndex: chunk.chunkIndex,
-          chunkText: chunk.text,
-          pageNumber: chunk.pageNumber,
+          await sql`
+            INSERT INTO document_chunks (id, document_id, chunk_index, chunk_text, page_number, embedding)
+            VALUES (
+              ${chunkId},
+              ${docId},
+              ${globalIdx},
+              ${chunkText},
+              ${approxPage},
+              ${vectorLiteral}::vector
+            )
+            ON CONFLICT (id) DO UPDATE
+              SET chunk_text = EXCLUDED.chunk_text,
+                  embedding = EXCLUDED.embedding
+          `;
         })
-      )
-    );
+      );
 
-    processed += batch.length;
-    console.log(`   ✓ ${processed}/${allChunks.length} chunks processed`);
+      processed += batch.length;
+      console.log(`   ✓ ${processed}/${rawChunks.length} chunks processed`);
+    }
+
+    console.log(`\n✅ Done! Ingested ${rawChunks.length} chunks for "${docName}" (${docId})`);
+    console.log(`   Course: ${courseId}`);
+  } finally {
+    await sql.end();
   }
-
-  console.log(`\n✅ Done! Ingested ${allChunks.length} chunks for "${docName}" (${docId})`);
-  console.log(`   Course: ${courseId}`);
 }
 
 main().catch((err) => {

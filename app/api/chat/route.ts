@@ -5,8 +5,7 @@ import {
   convertToModelMessages,
 } from "ai"
 import { eq, asc } from "drizzle-orm"
-import { getCloudflareContext } from "@opennextjs/cloudflare"
-import { getCloudflareDb, getDb } from "@/lib/db/index"
+import { getDb } from "@/lib/db/index"
 import { messages, chatSessions } from "@/lib/db/schema"
 import { getOpenAI, CHAT_MODEL } from "@/lib/llm/client"
 import { buildChatSystemPrompt } from "@/lib/llm/prompts"
@@ -40,20 +39,15 @@ export async function POST(request: Request) {
       : (lastUserMsg?.content as Array<{ type: string; text?: string }>)
           ?.find((p) => p.type === "text")?.text ?? ""
 
-  // ─── DB: try CF D1, fallback to local libsql ──────────────────────────────
+  const db = getDb()
+
+  // RAG: embed query and retrieve relevant chunks from Supabase pgvector
   let contextChunks: RetrievedChunk[] = []
-  let db: ReturnType<typeof getCloudflareDb> | ReturnType<typeof getDb>
-
   try {
-    const { env } = getCloudflareContext()
-    db = getCloudflareDb(env.DB)
-
-    // RAG only available with CF Vectorize binding
     const vector = await embedText(lastUserText, apiKey)
-    contextChunks = await retrieveRelevantChunks(vector, courseId, env.VECTORIZE, db as ReturnType<typeof getCloudflareDb>)
-  } catch {
-    // CF bindings not available (local dev) — use local SQLite, skip RAG
-    db = getDb()
+    contextChunks = await retrieveRelevantChunks(vector, courseId, db)
+  } catch (err) {
+    console.warn("RAG retrieval failed, continuing without context:", err)
   }
 
   const contextStr = formatContextForPrompt(contextChunks)
@@ -85,18 +79,18 @@ export async function POST(request: Request) {
         })
       }
 
-      // ─── Persist to DB (background) ──────────────────────────────────
+      // ─── Persist to DB ────────────────────────────────────────────────────
       if (sessionId) {
         const now = Math.floor(Date.now() / 1000)
         const persist = (async () => {
-          await db!.insert(messages).values({
+          await db.insert(messages).values({
             id: crypto.randomUUID(),
             sessionId,
             role: "user",
             content: lastUserText,
             createdAt: now,
           })
-          await db!.insert(messages).values({
+          await db.insert(messages).values({
             id: crypto.randomUUID(),
             sessionId,
             role: "assistant",
@@ -104,12 +98,12 @@ export async function POST(request: Request) {
             citations: citations.length > 0 ? JSON.stringify(citations) : null,
             createdAt: now + 1,
           })
-          await db!
+          await db
             .update(chatSessions)
             .set({ updatedAt: now + 1 })
             .where(eq(chatSessions.id, sessionId))
 
-          const allMsgs = await db!
+          const allMsgs = await db
             .select({ role: messages.role })
             .from(messages)
             .where(eq(messages.sessionId, sessionId))

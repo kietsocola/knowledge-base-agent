@@ -1,6 +1,5 @@
 import type { DB } from "@/lib/db/index";
-import { documentChunks, documents } from "@/lib/db/schema";
-import { eq, inArray } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 
 export interface RetrievedChunk {
   chunkId: string;
@@ -13,49 +12,44 @@ export interface RetrievedChunk {
 const MIN_SCORE = 0.5; // cosine similarity threshold
 
 /**
- * Query Vectorize for relevant chunks, then join with D1 for metadata.
- * Returns chunks sorted by relevance score (descending).
+ * Query Supabase pgvector for relevant chunks using cosine similarity.
+ * Uses the <=> operator (cosine distance); score = 1 - distance.
  */
 export async function retrieveRelevantChunks(
   queryVector: number[],
   courseId: string,
-  vectorize: VectorizeIndex,
   db: DB,
   topK = 5
 ): Promise<RetrievedChunk[]> {
-  // 1. Query Vectorize
-  const results = await vectorize.query(queryVector, {
-    topK,
-    filter: { courseId },
-    returnMetadata: "all",
-  });
+  const vectorLiteral = `[${queryVector.join(",")}]`;
 
-  // 2. Filter by minimum score
-  const relevant = results.matches.filter((m: VectorizeMatch) => m.score >= MIN_SCORE);
-  if (relevant.length === 0) return [];
+  const rows = await db.execute(sql`
+    SELECT
+      dc.id         AS "chunkId",
+      dc.chunk_text AS "chunkText",
+      dc.page_number AS "pageNumber",
+      d.name        AS "documentName",
+      1 - (dc.embedding <=> ${sql.raw(`'${vectorLiteral}'::vector`)}::vector) AS score
+    FROM document_chunks dc
+    LEFT JOIN documents d ON dc.document_id = d.id
+    WHERE d.course_id = ${courseId}
+      AND dc.embedding IS NOT NULL
+      AND 1 - (dc.embedding <=> ${sql.raw(`'${vectorLiteral}'::vector`)}::vector) >= ${MIN_SCORE}
+    ORDER BY dc.embedding <=> ${sql.raw(`'${vectorLiteral}'::vector`)}::vector
+    LIMIT ${topK}
+  `);
 
-  // 3. Fetch metadata from D1
-  const chunkIds = relevant.map((m: VectorizeMatch) => m.id);
-  const chunks = await db
-    .select({
-      id: documentChunks.id,
-      chunkText: documentChunks.chunkText,
-      pageNumber: documentChunks.pageNumber,
-      documentName: documents.name,
-    })
-    .from(documentChunks)
-    .leftJoin(documents, eq(documentChunks.documentId, documents.id))
-    .where(inArray(documentChunks.id, chunkIds));
-
-  // 4. Merge scores + sort by score
-  const scoreMap = new Map(relevant.map((m: VectorizeMatch) => [m.id, m.score]));
-  return chunks
-    .map((c: { id: string; chunkText: string; pageNumber: number | null; documentName: string | null }) => ({
-      chunkId: c.id,
-      documentName: c.documentName ?? "Unknown",
-      pageNumber: c.pageNumber ?? 0,
-      chunkText: c.chunkText,
-      score: scoreMap.get(c.id) ?? 0,
-    }))
-    .sort((a: RetrievedChunk, b: RetrievedChunk) => b.score - a.score);
+  return (rows as unknown as Array<{
+    chunkId: string;
+    chunkText: string;
+    pageNumber: number | null;
+    documentName: string | null;
+    score: number | string;
+  }>).map((row) => ({
+    chunkId: row.chunkId,
+    chunkText: row.chunkText,
+    pageNumber: row.pageNumber ?? 0,
+    documentName: row.documentName ?? "Unknown",
+    score: typeof row.score === "string" ? parseFloat(row.score) : row.score,
+  }));
 }
