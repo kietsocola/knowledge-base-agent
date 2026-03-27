@@ -16,10 +16,11 @@ export function getDb() {
   }
 
   const client = postgres(connectionString, {
-    // Vercel serverless: disable connection pooling (each invocation is short-lived)
     max: 1,
     idle_timeout: 20,
     connect_timeout: 10,
+    ssl: connectionString.includes("localhost") ? false : "require",
+    prepare: false, // required for Supabase Transaction Pooler (PgBouncer)
   });
 
   _db = drizzle(client, { schema });
