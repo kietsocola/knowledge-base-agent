@@ -40,15 +40,13 @@ export function ThinkingIndicator({ isVisible }: ThinkingIndicatorProps) {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -8 }}
           transition={{ duration: 0.2 }}
-          className="flex items-start gap-3 px-4 py-3"
+          className="flex items-start gap-4 px-4 py-2 sm:px-8"
         >
-          {/* Avatar */}
-          <div className="w-7 h-7 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-            <span className="text-xs font-bold text-primary">AI</span>
+          <div className="mt-1 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl bg-primary text-white shadow-sm shadow-primary/20">
+            <span className="text-[11px] font-bold">AI</span>
           </div>
 
-          {/* Thinking bubble */}
-          <div className="bg-muted rounded-2xl rounded-tl-sm px-4 py-2.5 max-w-xs">
+          <div className="max-w-sm rounded-[1.6rem] rounded-tl-md border border-white/80 bg-white/90 px-5 py-4 shadow-sm">
             <AnimatePresence mode="wait">
               <motion.div
                 key={stepIndex}
@@ -63,7 +61,6 @@ export function ThinkingIndicator({ isVisible }: ThinkingIndicatorProps) {
               </motion.div>
             </AnimatePresence>
 
-            {/* Pulse dots */}
             <div className="flex gap-1 mt-2">
               {[0, 1, 2].map((i) => (
                 <motion.div

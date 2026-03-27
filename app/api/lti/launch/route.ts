@@ -1,6 +1,6 @@
 import { cookies } from "next/headers"
 import { getIronSession } from "iron-session"
-import { eq } from "drizzle-orm"
+import { and, desc, eq } from "drizzle-orm"
 import { getDb } from "@/lib/db/index"
 import { students, courses, chatSessions } from "@/lib/db/schema"
 import { MOCK_STUDENTS, MOCK_COURSES } from "@/lib/lti/mock"
@@ -14,6 +14,7 @@ export async function POST(request: Request) {
       studentId?: string
       courseId?: string
       id_token?: string
+      forceNew?: boolean
     }
     const ltiMode = process.env.LTI_MODE ?? "mock"
     const ltiSecret = process.env.LTI_MOCK_SECRET ?? ""
@@ -82,17 +83,47 @@ export async function POST(request: Request) {
       })
       .onConflictDoNothing()
 
-    // ─── Create chat session ─────────────────────────────────────────────────
-    const sessionId = crypto.randomUUID()
-    await db.insert(chatSessions).values({
-      id: sessionId,
-      studentId,
-      courseId,
-      ltiLaunchId: crypto.randomUUID(),
-      status: "active",
-      createdAt: now,
-      updatedAt: now,
-    })
+    // ─── Reuse existing session or create new ────────────────────────────────
+    // forceNew=true: always create a fresh session (explicit "new session" action)
+    // default: reuse the most recent active session so repeated launches don't spam new sessions
+    let sessionId: string
+    if (!body.forceNew) {
+      const [existing] = await db
+        .select({ id: chatSessions.id })
+        .from(chatSessions)
+        .where(and(
+          eq(chatSessions.studentId, studentId),
+          eq(chatSessions.courseId, courseId),
+          eq(chatSessions.status, "active"),
+        ))
+        .orderBy(desc(chatSessions.createdAt))
+        .limit(1)
+      if (existing) {
+        sessionId = existing.id
+      } else {
+        sessionId = crypto.randomUUID()
+        await db.insert(chatSessions).values({
+          id: sessionId,
+          studentId,
+          courseId,
+          ltiLaunchId: crypto.randomUUID(),
+          status: "active",
+          createdAt: now,
+          updatedAt: now,
+        })
+      }
+    } else {
+      sessionId = crypto.randomUUID()
+      await db.insert(chatSessions).values({
+        id: sessionId,
+        studentId,
+        courseId,
+        ltiLaunchId: crypto.randomUUID(),
+        status: "active",
+        createdAt: now,
+        updatedAt: now,
+      })
+    }
 
     // ─── Set iron-session cookie ─────────────────────────────────────────────
     const cookieStore = await cookies()

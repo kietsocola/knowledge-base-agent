@@ -1,78 +1,39 @@
-/**
- * Offline PDF ingestion script — Supabase + pgvector version.
+﻿/**
+ * Offline PDF ingestion script - Supabase + pgvector version.
  * Run ONCE before the demo to populate Supabase with document chunks and embeddings.
  *
  * Usage:
  *   npx tsx scripts/ingest-pdf.ts \
  *     --pdf ./public/sample-docs/giao-trinh-ctdl.pdf \
  *     --course course-ctdl-001 \
- *     --course-title "Cấu Trúc Dữ Liệu" \
- *     --doc-name "Giáo trình CTDL" \
+ *     --course-title "Cau Truc Du Lieu" \
+ *     --doc-name "Giao trinh CTDL" \
  *     --doc-id doc-ctdl-001
  *
  * Required env vars (in .env.local):
  *   OPENAI_API_KEY
- *   DATABASE_URL  (Supabase PostgreSQL connection string)
+ *   DATABASE_URL (Supabase PostgreSQL connection string)
  */
 
 import fs from "fs";
-import path from "path";
 import { randomUUID } from "crypto";
 import { loadEnvConfig } from "@next/env";
 import postgres from "postgres";
+import { parsePdf } from "../lib/rag/pdf";
 
-type PdfParseResult = { text: string; numpages: number };
-
-async function loadDeps() {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const mod = require("pdf-parse") as
-    | ((buffer: Buffer) => Promise<PdfParseResult>)
-    | {
-        default?: unknown;
-        PDFParse?: new (opts: { data: Uint8Array }) => {
-          getText: () => Promise<{ text: string; total: number }>;
-          destroy?: () => Promise<void>;
-        };
-      };
-
-  if (typeof mod === "function") {
-    return { parsePdf: (buffer: Buffer) => mod(buffer) };
-  }
-
-  const PDFParseCtor =
-    (mod as { PDFParse?: unknown }).PDFParse ??
-    (mod as { default?: { PDFParse?: unknown } }).default?.PDFParse;
-
-  if (typeof PDFParseCtor === "function") {
-    return {
-      parsePdf: async (buffer: Buffer): Promise<PdfParseResult> => {
-        const parser = new (PDFParseCtor as new (opts: { data: Uint8Array }) => {
-          getText: () => Promise<{ text: string; total: number }>;
-          destroy?: () => Promise<void>;
-        })({ data: new Uint8Array(buffer) });
-
-        try {
-          const textResult = await parser.getText();
-          return { text: textResult.text, numpages: textResult.total };
-        } finally {
-          if (typeof parser.destroy === "function") {
-            await parser.destroy().catch(() => undefined);
-          }
-        }
-      },
-    };
-  }
-
-  throw new Error('Unsupported pdf-parse export shape.');
+function cleanText(text: string): string {
+  return text
+    .replace(/\x00/g, "")
+    .replace(/[\x01-\x08\x0B\x0C\x0E-\x1F\x7F]/g, " ")
+    .replace(/\uFFFD/g, "")
+    .replace(/ {3,}/g, "  ")
+    .trim();
 }
 
-function chunkText(
-  text: string,
-  chunkSize = 2000,
-  overlap = 200
-): string[] {
+function chunkText(text: string, chunkSize = 2000, overlap = 200): string[] {
   const chunks: string[] = [];
   let start = 0;
+
   while (start < text.length) {
     const end = Math.min(start + chunkSize, text.length);
     const chunk = text.slice(start, end).trim();
@@ -80,6 +41,7 @@ function chunkText(
     if (end >= text.length) break;
     start += chunkSize - overlap;
   }
+
   return chunks;
 }
 
@@ -96,7 +58,11 @@ async function embedText(text: string, apiKey: string): Promise<number[]> {
       dimensions: 768,
     }),
   });
-  if (!res.ok) throw new Error(`Embed error: ${res.status} ${await res.text()}`);
+
+  if (!res.ok) {
+    throw new Error(`Embed error: ${res.status} ${await res.text()}`);
+  }
+
   const data = (await res.json()) as { data: Array<{ embedding: number[] }> };
   return data.data[0].embedding;
 }
@@ -114,7 +80,7 @@ async function main() {
   const courseId = get("--course") ?? "course-ctdl-001";
   const courseTitle = get("--course-title") ?? courseId;
   const courseIss = get("--course-iss") ?? "https://mock-moodle.demo.edu.vn";
-  const docName = get("--doc-name") ?? "Tài liệu";
+  const docName = get("--doc-name") ?? "Tai lieu";
   const docId = get("--doc-id") ?? randomUUID();
 
   if (!pdfPath) {
@@ -133,30 +99,26 @@ async function main() {
   const sql = postgres(databaseUrl, { max: 1 });
 
   try {
-    console.log(`\n📄 Loading PDF: ${pdfPath}`);
-    const { parsePdf } = await loadDeps();
+    console.log(`\nLoading PDF: ${pdfPath}`);
     const pdfBuffer = fs.readFileSync(pdfPath);
     const pdfData = await parsePdf(pdfBuffer);
-    console.log(`   Pages: ${pdfData.numpages}, Text length: ${pdfData.text.length} chars`);
+    console.log(`Pages: ${pdfData.numpages}, Text length: ${pdfData.text.length} chars`);
 
-    // Ensure course exists
     await sql`
       INSERT INTO courses (id, title, lti_iss)
       VALUES (${courseId}, ${courseTitle}, ${courseIss})
       ON CONFLICT (id) DO NOTHING
     `;
 
-    // Insert document record
-    console.log(`\n💾 Inserting document record...`);
+    console.log("\nInserting document record...");
     await sql`
       INSERT INTO documents (id, course_id, name, page_count)
       VALUES (${docId}, ${courseId}, ${docName}, ${pdfData.numpages})
       ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, page_count = EXCLUDED.page_count
     `;
 
-    // Chunk text
-    const rawChunks = chunkText(pdfData.text, 2000, 200);
-    console.log(`\n🔪 Chunked into ${rawChunks.length} chunks`);
+    const rawChunks = chunkText(cleanText(pdfData.text), 2000, 200);
+    console.log(`\nChunked into ${rawChunks.length} chunks`);
 
     const BATCH_SIZE = 10;
     let processed = 0;
@@ -170,7 +132,8 @@ async function main() {
           const globalIdx = i + batchIdx;
           const chunkId = randomUUID();
           const approxPage = Math.ceil((globalIdx + 1) * approxPageFactor) || 1;
-          const embedding = await embedText(chunkText, openaiKey);
+          const cleanedChunk = cleanText(chunkText);
+          const embedding = await embedText(cleanedChunk, openaiKey);
           const vectorLiteral = `[${embedding.join(",")}]`;
 
           await sql`
@@ -179,7 +142,7 @@ async function main() {
               ${chunkId},
               ${docId},
               ${globalIdx},
-              ${chunkText},
+              ${cleanedChunk},
               ${approxPage},
               ${vectorLiteral}::vector
             )
@@ -191,17 +154,17 @@ async function main() {
       );
 
       processed += batch.length;
-      console.log(`   ✓ ${processed}/${rawChunks.length} chunks processed`);
+      console.log(`OK ${processed}/${rawChunks.length} chunks processed`);
     }
 
-    console.log(`\n✅ Done! Ingested ${rawChunks.length} chunks for "${docName}" (${docId})`);
-    console.log(`   Course: ${courseId}`);
+    console.log(`\nDone! Ingested ${rawChunks.length} chunks for "${docName}" (${docId})`);
+    console.log(`Course: ${courseId}`);
   } finally {
     await sql.end();
   }
 }
 
 main().catch((err) => {
-  console.error("\n❌ Error:", err.message);
+  console.error("\nError:", err.message);
   process.exit(1);
 });

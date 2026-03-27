@@ -66,33 +66,39 @@ export function EvaluationLoader({
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-6">
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-        >
-          <BarChart3 className="w-10 h-10 text-primary" />
-        </motion.div>
-        <div className="text-center space-y-2">
-          <div className="font-semibold">Đang phân tích năng lực học tập</div>
+      <div className="soft-grid flex min-h-screen items-center justify-center px-4 py-12">
+        <div className="w-full max-w-xl rounded-[2rem] border border-white/70 bg-white/85 p-8 text-center shadow-[0_30px_90px_rgba(0,80,203,0.12)]">
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+            className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-primary text-white shadow-lg shadow-primary/20"
+          >
+            <BarChart3 className="h-8 w-8" />
+          </motion.div>
+          <div className="mt-6 space-y-2 text-center">
+            <div className="font-heading text-2xl font-black">Đang phân tích năng lực học tập</div>
+            <div className="mx-auto max-w-sm text-sm text-muted-foreground">
+              AI đang tổng hợp lịch sử hỏi đáp, chấm điểm các kỹ năng và tạo báo cáo cá nhân hóa.
+            </div>
+          </div>
           <motion.div
             key={step}
             initial={{ opacity: 0, y: 4 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-sm text-muted-foreground"
+            className="mt-4 text-sm text-primary"
           >
             {LOADING_STEPS[step]}
           </motion.div>
-        </div>
-        <div className="flex gap-1">
-          {LOADING_STEPS.map((_, i) => (
-            <div
-              key={i}
-              className={`h-1.5 rounded-full transition-all duration-500 ${
-                i <= step ? "w-6 bg-primary" : "w-2 bg-muted"
-              }`}
-            />
-          ))}
+          <div className="mt-6 flex justify-center gap-1">
+            {LOADING_STEPS.map((_, i) => (
+              <div
+                key={i}
+                className={`h-1.5 rounded-full transition-all duration-500 ${
+                  i <= step ? "w-8 bg-primary" : "w-2 bg-muted"
+                }`}
+              />
+            ))}
+          </div>
         </div>
       </div>
     )
@@ -100,11 +106,11 @@ export function EvaluationLoader({
 
   if (error) {
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4">
-        <AlertCircle className="w-10 h-10 text-destructive" />
-        <div className="text-center space-y-1">
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 px-4">
+        <AlertCircle className="h-10 w-10 text-destructive" />
+        <div className="space-y-1 text-center">
           <div className="font-semibold">Không thể tạo đánh giá</div>
-          <div className="text-sm text-muted-foreground max-w-sm">{error}</div>
+          <div className="max-w-sm text-sm text-muted-foreground">{error}</div>
         </div>
         <div className="flex gap-3">
           <a href={`/chat/${sessionId}`}>

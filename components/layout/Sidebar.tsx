@@ -1,11 +1,12 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { BookOpen, FileText, BarChart3, X, History, MessageSquare, BarChart2 } from "lucide-react"
+import { BookOpen, FileText, BarChart3, X, History, MessageSquare, BarChart2, UploadCloud, FileStack } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
+import { UploadModal } from "@/components/chat/UploadModal"
 import type { SessionSummary } from "@/components/chat/ChatInterface"
 
 interface Document {
@@ -47,9 +48,12 @@ export function Sidebar({
 }: SidebarProps) {
   const [docs, setDocs] = useState<Document[]>([])
   const [loadingDocs, setLoadingDocs] = useState(true)
+  const [docsVersion, setDocsVersion] = useState(0)
+  const [showUpload, setShowUpload] = useState(false)
 
   useEffect(() => {
     if (!courseId) return
+    setLoadingDocs(true)
     fetch(`/api/documents?courseId=${courseId}`)
       .then((r) => r.json())
       .then((d: unknown) => {
@@ -58,7 +62,7 @@ export function Sidebar({
         setLoadingDocs(false)
       })
       .catch(() => setLoadingDocs(false))
-  }, [courseId])
+  }, [courseId, docsVersion])
 
   const EVAL_THRESHOLD = 4
   const evalUnlocked = messageCount >= EVAL_THRESHOLD
@@ -67,7 +71,6 @@ export function Sidebar({
 
   return (
     <>
-      {/* Overlay on mobile */}
       {isOpen && (
         <div
           className="fixed inset-0 bg-black/40 z-40 lg:hidden"
@@ -75,48 +78,49 @@ export function Sidebar({
         />
       )}
 
-      {/* Sidebar panel */}
       <aside
         className={cn(
-          "fixed top-0 right-0 h-full w-72 bg-background border-l border-border z-50 flex flex-col transition-transform duration-300",
+          "fixed top-0 left-0 z-50 flex h-full w-80 flex-col border-r border-white/70 bg-[#f2f4f6]/95 p-6 transition-transform duration-300",
           "lg:static lg:translate-x-0 lg:z-auto",
-          isOpen ? "translate-x-0" : "translate-x-full lg:translate-x-0"
+          isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-          <span className="font-semibold text-sm">Thông tin</span>
-          <Button variant="ghost" size="icon" className="h-7 w-7 lg:hidden" onClick={onClose}>
+        <div className="mb-6 flex items-center justify-between">
+          <div>
+            <div className="font-heading text-lg font-bold text-primary">Kho Tri Thức</div>
+            <div className="text-xs text-muted-foreground">Tài liệu đồng bộ từ Moodle</div>
+          </div>
+          <Button variant="ghost" size="icon" className="h-8 w-8 lg:hidden" onClick={onClose}>
             <X className="h-4 w-4" />
           </Button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4 space-y-5">
-          {/* Course info */}
+        <div className="flex-1 overflow-y-auto space-y-6 pr-1">
           <div>
-            <div className="flex items-center gap-2 mb-2">
-              <BookOpen className="w-4 h-4 text-primary" />
-              <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            <div className="mb-2 flex items-center gap-2">
+              <BookOpen className="h-4 w-4 text-primary" />
+              <span className="text-[11px] font-bold uppercase tracking-[0.22em] text-muted-foreground">
                 Môn học
               </span>
             </div>
-            <div className="text-sm font-medium leading-snug">{courseName}</div>
-            <div className="text-xs text-muted-foreground mt-1">Sinh viên: {studentName}</div>
+            <div className="rounded-[1.5rem] border border-white/80 bg-white/90 p-4 shadow-sm">
+              <div className="text-sm font-semibold leading-snug">{courseName}</div>
+              <div className="mt-1 text-xs text-muted-foreground">Sinh viên: {studentName}</div>
+            </div>
           </div>
 
-          <Separator />
-
-          {/* Chat history */}
           <div>
-            <div className="flex items-center gap-2 mb-2">
-              <History className="w-4 h-4 text-primary" />
-              <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            <div className="mb-2 flex items-center gap-2">
+              <History className="h-4 w-4 text-primary" />
+              <span className="text-[11px] font-bold uppercase tracking-[0.22em] text-muted-foreground">
                 Lịch sử chat
               </span>
             </div>
 
             {pastSessions.length === 0 ? (
-              <div className="text-[11px] text-muted-foreground italic px-1">Chưa có phiên nào.</div>
+              <div className="rounded-2xl bg-white/80 px-4 py-3 text-[11px] italic text-muted-foreground shadow-sm">
+                Chưa có phiên nào.
+              </div>
             ) : (
               <ul className="space-y-1">
                 {pastSessions.map((s, i) => {
@@ -128,13 +132,12 @@ export function Sidebar({
                     <li key={s.id}>
                       <div
                         className={cn(
-                          "rounded-lg px-3 py-2 transition-colors",
+                          "rounded-[1.25rem] border px-3 py-3 transition-colors",
                           isViewed
-                            ? "bg-primary/10 border border-primary/25"
-                            : "hover:bg-muted border border-transparent"
+                            ? "border-primary/20 bg-white text-primary shadow-sm"
+                            : "border-transparent bg-white/75 hover:bg-white hover:shadow-sm"
                         )}
                       >
-                        {/* Session link (title row) */}
                         <a
                           href={`/chat/${s.id}`}
                           className="flex items-center gap-1 group"
@@ -151,12 +154,10 @@ export function Sidebar({
                           )}
                         </a>
 
-                        {/* Meta row */}
                         <div className="text-[10px] text-muted-foreground mt-0.5 pl-4">
                           {formatDate(s.createdAt)} · {s.msgCount} tin
                         </div>
 
-                        {/* Evaluation link (separate, not nested) */}
                         {s.msgCount >= 4 && (
                           <a
                             href={`/evaluation?sessionId=${s.id}`}
@@ -174,13 +175,10 @@ export function Sidebar({
             )}
           </div>
 
-          <Separator />
-
-          {/* Documents */}
           <div>
-            <div className="flex items-center gap-2 mb-2">
-              <FileText className="w-4 h-4 text-primary" />
-              <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            <div className="mb-2 flex items-center gap-2">
+              <FileStack className="h-4 w-4 text-primary" />
+              <span className="text-[11px] font-bold uppercase tracking-[0.22em] text-muted-foreground">
                 Tài liệu
               </span>
             </div>
@@ -190,16 +188,20 @@ export function Sidebar({
                 <Skeleton className="h-5 w-3/4" />
               </div>
             ) : docs.length === 0 ? (
-              <div className="text-xs text-muted-foreground italic">Chưa có tài liệu nào được ingest.</div>
+              <div className="rounded-2xl bg-white/80 px-4 py-3 text-xs italic text-muted-foreground shadow-sm">
+                Chưa có tài liệu nào được ingest.
+              </div>
             ) : (
               <ul className="space-y-1.5">
                 {docs.map((doc) => (
-                  <li key={doc.id} className="flex items-start gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-primary/60 mt-1.5 flex-shrink-0" />
-                    <div>
-                      <div className="text-xs font-medium leading-snug">{doc.name}</div>
+                  <li key={doc.id} className="flex items-start gap-3 rounded-2xl bg-white/80 p-3 shadow-sm">
+                    <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-red-50 text-red-600">
+                      <FileText className="h-4 w-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="truncate text-xs font-semibold leading-snug">{doc.name}</div>
                       {doc.pageCount && (
-                        <div className="text-[10px] text-muted-foreground">{doc.pageCount} trang</div>
+                        <div className="text-[10px] text-muted-foreground">{doc.pageCount} trang · PDF</div>
                       )}
                     </div>
                   </li>
@@ -208,32 +210,30 @@ export function Sidebar({
             )}
           </div>
 
-          <Separator />
-
-          {/* Evaluation progress (only for active session) */}
           {sessionId === activeSessionId && (
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <BarChart3 className="w-4 h-4 text-primary" />
-                <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            <div className="rounded-[1.75rem] bg-gradient-to-br from-primary to-[#0066ff] p-5 text-white shadow-lg shadow-primary/20">
+              <div className="mb-2 flex items-center gap-2">
+                <BarChart3 className="h-4 w-4" />
+                <span className="text-[11px] font-bold uppercase tracking-[0.22em] text-white/70">
                   Tiến độ đánh giá
                 </span>
               </div>
-              <div className="h-2 rounded-full bg-muted overflow-hidden">
+              <div className="mt-3 text-3xl font-black">{Math.round((evalProgress / EVAL_THRESHOLD) * 100)}%</div>
+              <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-white/20">
                 <div
-                  className="h-full rounded-full bg-primary transition-all duration-500"
+                  className="h-full rounded-full bg-white transition-all duration-500"
                   style={{ width: `${(evalProgress / EVAL_THRESHOLD) * 100}%` }}
                 />
               </div>
-              <div className="text-xs text-muted-foreground mt-1.5">
+              <div className="mt-3 text-xs leading-relaxed text-blue-50/85">
                 {evalUnlocked
-                  ? "Sẵn sàng đánh giá! Xem kết quả →"
+                  ? "Sẵn sàng đánh giá! Xem kết quả ngay."
                   : messageCount === 0
                   ? "Hỏi 4 câu để nhận đánh giá năng lực"
                   : `Còn ${nextEvalAt} câu nữa để được đánh giá`}
               </div>
               {evalUnlocked && (
-                <a href="/evaluation" className="mt-2 text-xs font-medium text-primary hover:underline block">
+                <a href="/evaluation" className="mt-3 inline-block text-xs font-semibold text-white underline-offset-4 hover:underline">
                   Xem đánh giá năng lực →
                 </a>
               )}
@@ -241,13 +241,28 @@ export function Sidebar({
           )}
         </div>
 
-        {/* Footer */}
-        <div className="px-4 py-3 border-t border-border">
+        <button
+          onClick={() => setShowUpload(true)}
+          className="mt-6 flex items-center justify-center gap-2 rounded-full bg-primary px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-primary/20 transition-transform hover:scale-[1.01]"
+        >
+          <UploadCloud className="h-4 w-4" />
+          Tải lên tài liệu mới
+        </button>
+
+        <UploadModal
+          open={showUpload}
+          onClose={() => setShowUpload(false)}
+          courseId={courseId}
+          courseName={courseName}
+          onSuccess={() => setDocsVersion((v) => v + 1)}
+        />
+
+        <div className="mt-4 pt-4">
           <a
             href="/api/health"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-[10px] text-muted-foreground hover:underline flex items-center gap-1"
+            className="flex items-center gap-1 text-[10px] text-muted-foreground hover:underline"
           >
             <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
             Infrastructure live

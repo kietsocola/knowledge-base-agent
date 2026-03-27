@@ -40,6 +40,10 @@ export function EvaluationRadarChart({ scores }: RadarChartProps) {
     fullMark: 10,
   }))
 
+  const primaryColor = "var(--primary)"
+  const borderColor = "var(--border)"
+  const mutedColor = "var(--muted-foreground)"
+
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.9 }}
@@ -50,30 +54,30 @@ export function EvaluationRadarChart({ scores }: RadarChartProps) {
       <ResponsiveContainer width="100%" height="100%">
         <RechartsRadarChart data={data} margin={{ top: 10, right: 20, bottom: 10, left: 20 }}>
           <PolarGrid
-            stroke="hsl(var(--border))"
+            stroke={borderColor}
             strokeOpacity={0.6}
           />
           <PolarAngleAxis
             dataKey="subject"
             tick={{
-              fill: "hsl(var(--muted-foreground))",
+              fill: mutedColor,
               fontSize: 11,
             }}
           />
           <Tooltip
             contentStyle={{
-              backgroundColor: "hsl(var(--card))",
-              border: "1px solid hsl(var(--border))",
+              backgroundColor: "var(--card)",
+              border: "1px solid var(--border)",
               borderRadius: "8px",
               fontSize: 12,
             }}
-            formatter={(value) => [`${value}/10`, "Điểm"]}
+            formatter={(value) => [`${value}/10`, "Diem"]}
           />
           <Radar
-            name="Điểm"
+            name="Diem"
             dataKey="value"
-            stroke="hsl(var(--primary))"
-            fill="hsl(var(--primary))"
+            stroke={primaryColor}
+            fill={primaryColor}
             fillOpacity={0.25}
             strokeWidth={2}
             isAnimationActive={true}
