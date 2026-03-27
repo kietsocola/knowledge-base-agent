@@ -19,7 +19,7 @@ export function getDb() {
     max: 1,
     idle_timeout: 20,
     connect_timeout: 10,
-    ssl: connectionString.includes("localhost") ? false : "require",
+    ssl: connectionString.includes("localhost") ? false : { rejectUnauthorized: false },
     prepare: false, // required for Supabase Transaction Pooler (PgBouncer)
   });
 
