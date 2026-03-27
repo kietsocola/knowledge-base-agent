@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { EvaluationRadarChart } from "./RadarChart"
+import { buildSupportPlan } from "@/lib/evaluation/support-plan"
 import type { EvaluationResult } from "@/types/evaluation"
 
 interface EvaluationCardProps {
@@ -42,6 +43,25 @@ export function EvaluationCard({
   studentName,
   courseName,
 }: EvaluationCardProps) {
+  const supportPlan = buildSupportPlan(result)
+  const supportTone = {
+    high: {
+      badge: "bg-rose-100 text-rose-700",
+      dot: "bg-rose-500",
+      border: "border-rose-100",
+    },
+    medium: {
+      badge: "bg-amber-100 text-amber-700",
+      dot: "bg-amber-500",
+      border: "border-amber-100",
+    },
+    low: {
+      badge: "bg-emerald-100 text-emerald-700",
+      dot: "bg-emerald-500",
+      border: "border-emerald-100",
+    },
+  }[supportPlan.level]
+
   return (
     <div className="min-h-screen px-4 pb-12 pt-8 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-6xl space-y-8">
@@ -175,6 +195,43 @@ export function EvaluationCard({
             </div>
           </motion.div>
         )}
+
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.35 }}
+          className={`rounded-[2rem] border ${supportTone.border} bg-white/85 p-6 shadow-sm`}
+        >
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <div className="mb-2 flex items-center gap-2">
+                <MessageSquare className="h-4 w-4 text-primary" />
+                <div className="text-sm font-bold">Phương án hỗ trợ đề xuất</div>
+              </div>
+              <div className="text-sm text-muted-foreground">
+                {supportPlan.summary}
+              </div>
+            </div>
+            <div className={`rounded-full px-4 py-2 text-xs font-bold ${supportTone.badge}`}>
+              {supportPlan.title}
+            </div>
+          </div>
+
+          <div className="mt-5 space-y-3">
+            {supportPlan.actions.map((action, index) => (
+              <div key={index} className="flex items-start gap-3 text-sm leading-relaxed">
+                <div className={`mt-1.5 h-2 w-2 flex-shrink-0 rounded-full ${supportTone.dot}`} />
+                <div>{action}</div>
+              </div>
+            ))}
+          </div>
+
+          {supportPlan.shouldEscalateToInstructor && (
+            <div className="mt-5 rounded-[1.25rem] bg-rose-50 px-4 py-3 text-sm text-rose-700">
+              Nên chuẩn bị câu hỏi cụ thể và trao đổi thêm với giảng viên để được hỗ trợ trực tiếp.
+            </div>
+          )}
+        </motion.div>
 
         <motion.div
           initial={{ opacity: 0, y: 10 }}
