@@ -1,10 +1,19 @@
 import { cookies } from "next/headers"
 import { getIronSession } from "iron-session"
-import { eq, asc, desc } from "drizzle-orm"
+import { and, eq, asc, desc } from "drizzle-orm"
 import { getDb } from "@/lib/db/index"
-import { messages, chatSessions, courses, evaluations } from "@/lib/db/schema"
+import {
+  messages,
+  chatSessions,
+  courses,
+  evaluations,
+  courseConcepts,
+  studentConceptMastery,
+} from "@/lib/db/schema"
 import { generateEvaluation } from "@/lib/llm/evaluator"
 import { shouldReuseCachedEvaluation } from "@/lib/evaluation/cache"
+import { buildConceptMasterySignals } from "@/lib/learning/concepts"
+import { mergeConceptMastery } from "@/lib/learning/mastery"
 import { SESSION_OPTIONS } from "@/lib/session"
 import { authorizeOwnedSession } from "@/lib/security/session-authorization"
 import type { EvaluationResult } from "@/types/evaluation"
@@ -40,6 +49,7 @@ export async function POST(request: Request) {
       .from(courses)
       .where(eq(courses.id, access.value.courseId!))
       .limit(1)
+    const trustedStudentId = viewerSession.studentId!
 
     // ─── Fetch messages ──────────────────────────────────────────────────────
     const sessionMessages = await db
@@ -99,6 +109,94 @@ export async function POST(request: Request) {
       resultJson: JSON.stringify(result),
       createdAt: now,
     })
+
+    const conceptSignals = buildConceptMasterySignals(result)
+
+    for (const signal of conceptSignals) {
+      await db
+        .insert(courseConcepts)
+        .values({
+          id: crypto.randomUUID(),
+          courseId: access.value.courseId!,
+          name: signal.conceptName,
+          nameKey: signal.conceptKey,
+          source: signal.source,
+          createdAt: now,
+          updatedAt: now,
+        })
+        .onConflictDoUpdate({
+          target: [courseConcepts.courseId, courseConcepts.nameKey],
+          set: {
+            name: signal.conceptName,
+            source: signal.source,
+            updatedAt: now,
+          },
+        })
+
+      const [concept] = await db
+        .select({ id: courseConcepts.id })
+        .from(courseConcepts)
+        .where(
+          and(
+            eq(courseConcepts.courseId, access.value.courseId!),
+            eq(courseConcepts.nameKey, signal.conceptKey)
+          )
+        )
+        .limit(1)
+
+      if (!concept) continue
+
+      const [existingMastery] = await db
+        .select({
+          masteryScore: studentConceptMastery.masteryScore,
+          confidenceScore: studentConceptMastery.confidenceScore,
+          evidenceCount: studentConceptMastery.evidenceCount,
+        })
+        .from(studentConceptMastery)
+        .where(
+          and(
+            eq(studentConceptMastery.studentId, trustedStudentId),
+            eq(studentConceptMastery.courseId, access.value.courseId!),
+            eq(studentConceptMastery.conceptId, concept.id)
+          )
+        )
+        .limit(1)
+
+      const mergedMastery = mergeConceptMastery(existingMastery ?? null, {
+        masteryScore: signal.masteryScore,
+        confidenceScore: signal.confidenceScore,
+      })
+
+      await db
+        .insert(studentConceptMastery)
+        .values({
+          id: crypto.randomUUID(),
+          studentId: trustedStudentId,
+          courseId: access.value.courseId!,
+          conceptId: concept.id,
+          masteryScore: mergedMastery.masteryScore,
+          confidenceScore: mergedMastery.confidenceScore,
+          evidenceCount: mergedMastery.evidenceCount,
+          source: signal.source,
+          lastEvaluatedAt: now,
+          updatedAt: now,
+        })
+        .onConflictDoUpdate({
+          target: [
+            studentConceptMastery.studentId,
+            studentConceptMastery.courseId,
+            studentConceptMastery.conceptId,
+          ],
+          set: {
+            masteryScore: mergedMastery.masteryScore,
+            confidenceScore: mergedMastery.confidenceScore,
+            evidenceCount: mergedMastery.evidenceCount,
+            source: signal.source,
+            lastEvaluatedAt: now,
+            updatedAt: now,
+          },
+        })
+    }
 
     return Response.json(result)
   } catch (error) {
