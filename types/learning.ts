@@ -10,12 +10,21 @@ export interface LearningEventSnapshot {
   createdAt: number | null
 }
 
+export interface LearningTimelinePoint {
+  dateKey: string
+  label: string
+  totalEvents: number
+  chatTurns: number
+  evaluations: number
+}
+
 export interface LearningOverview {
   totalConcepts: number
   totalLearningEvents: number
   totalChatTurns: number
   totalEvaluations: number
   latestActivityAt: number | null
+  activityTimeline: LearningTimelinePoint[]
   focusConcepts: LearningConceptSnapshot[]
   improvingConcepts: LearningConceptSnapshot[]
   masteredConcepts: LearningConceptSnapshot[]
@@ -47,6 +56,7 @@ export interface ClassroomOverview {
   totalChatTurns: number
   totalEvaluations: number
   latestActivityAt: number | null
+  activityTimeline: LearningTimelinePoint[]
   strugglingConcepts: ClassroomConceptInsight[]
   strongestConcepts: ClassroomConceptInsight[]
   studentsNeedingAttention: ClassroomStudentSnapshot[]

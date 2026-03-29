@@ -1,6 +1,7 @@
 "use client"
 
 import { Activity, AlertTriangle, BookOpen, CalendarClock, GraduationCap, TrendingUp } from "lucide-react"
+import { ActivityTimelineChart } from "@/components/learning/ActivityTimelineChart"
 import type { ClassroomOverview } from "@/types/learning"
 
 interface ClassroomDashboardProps {
@@ -68,6 +69,12 @@ export function ClassroomDashboard({ overview, courseName }: ClassroomDashboardP
 
         <div className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
           <div className="space-y-6">
+            <ActivityTimelineChart
+              data={overview.activityTimeline}
+              title="Timeline hoạt động của lớp"
+              description="Thể hiện mức độ hỏi đáp và các mốc đánh giá theo từng ngày có hoạt động."
+            />
+
             <section className="rounded-[2rem] border border-rose-100 bg-white/90 p-6 shadow-sm">
               <div className="flex items-center gap-2 text-rose-700">
                 <AlertTriangle className="h-4 w-4" />

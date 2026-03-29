@@ -3,6 +3,7 @@ import type {
   LearningEventSnapshot,
   LearningOverview,
 } from "@/types/learning"
+import { buildActivityTimeline } from "@/lib/learning/timeline"
 
 interface BuildLearningOverviewInput {
   concepts: LearningConceptSnapshot[]
@@ -35,6 +36,7 @@ export function buildLearningOverview({
     totalChatTurns: events.filter((event) => event.eventType === "chat_turn_recorded").length,
     totalEvaluations: events.filter((event) => event.eventType === "evaluation_generated").length,
     latestActivityAt: latestActivityAt && latestActivityAt > 0 ? latestActivityAt : null,
+    activityTimeline: buildActivityTimeline(events),
     focusConcepts,
     improvingConcepts,
     masteredConcepts,

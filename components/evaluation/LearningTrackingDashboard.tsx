@@ -1,6 +1,7 @@
 "use client"
 
 import { Activity, BarChart3, BookMarked, BrainCircuit, Clock3 } from "lucide-react"
+import { ActivityTimelineChart } from "@/components/learning/ActivityTimelineChart"
 import type { LearningOverview } from "@/types/learning"
 
 interface LearningTrackingDashboardProps {
@@ -121,6 +122,14 @@ export function LearningTrackingDashboard({ overview }: LearningTrackingDashboar
             )}
           </div>
         </div>
+      </div>
+
+      <div className="mt-6">
+        <ActivityTimelineChart
+          data={overview.activityTimeline}
+          title="Timeline học tập gần đây"
+          description="Theo dõi số lượt hỏi đáp và số lần đánh giá theo từng ngày hoạt động."
+        />
       </div>
     </div>
   )

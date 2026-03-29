@@ -3,6 +3,7 @@ import type {
   ClassroomOverview,
   ClassroomStudentSnapshot,
 } from "@/types/learning"
+import { buildActivityTimeline } from "@/lib/learning/timeline"
 
 interface ClassroomSessionSnapshot {
   studentId: string
@@ -173,6 +174,7 @@ export function buildClassroomOverview({
     totalChatTurns: events.filter((event) => event.eventType === "chat_turn_recorded").length,
     totalEvaluations: events.filter((event) => event.eventType === "evaluation_generated").length,
     latestActivityAt: latestActivityAt && latestActivityAt > 0 ? latestActivityAt : null,
+    activityTimeline: buildActivityTimeline(events),
     strugglingConcepts: [...conceptInsights]
       .sort((a, b) => a.averageMasteryScore - b.averageMasteryScore || b.studentCount - a.studentCount)
       .slice(0, 5),

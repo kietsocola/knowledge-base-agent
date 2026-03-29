@@ -24,6 +24,8 @@ test("buildLearningOverview groups concepts by mastery bands and counts events",
   assert.equal(overview.focusConcepts.length, 1)
   assert.equal(overview.improvingConcepts.length, 1)
   assert.equal(overview.latestActivityAt, 102)
+  assert.equal(overview.activityTimeline.length, 1)
+  assert.equal(overview.activityTimeline[0]?.totalEvents, 3)
 })
 
 test("buildLearningOverview sorts focus concepts by weakest mastery first", () => {
