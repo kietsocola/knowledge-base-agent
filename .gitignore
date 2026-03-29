@@ -43,6 +43,10 @@ yarn-error.log*
 # scripts output
 scripts/pdfs/
 
+# local agent skills / tooling
+.agents/skills/
+skills-lock.json
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
