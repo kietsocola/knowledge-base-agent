@@ -9,7 +9,7 @@ test("chat stream delay stays in a fast realtime range", () => {
 })
 
 test("chat stream chunking preserves words and punctuation in short chunks", () => {
-  const chunks = Array.from("Xin chào, bạn nhé!".match(CHAT_STREAM_CHUNKING) ?? [])
+  const chunks = Array.from(CHAT_STREAM_CHUNKING.segment("Cấu trúc dữ liệu, bạn nhé!"), (part) => part.segment)
 
-  assert.deepEqual(chunks, ["Xin ", "chào", ",", "bạn ", "nhé", "!"])
+  assert.deepEqual(chunks, ["Cấu", " ", "trúc", " ", "dữ", " ", "liệu", ",", " ", "bạn", " ", "nhé", "!"])
 })

@@ -54,7 +54,9 @@ export function ChatInterface({
   const [input, setInput] = useState("")
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [desktopSidebarExpanded, setDesktopSidebarExpanded] = useState(true)
+  const [animatedAssistantId, setAnimatedAssistantId] = useState<string | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
+  const hasHydratedAssistantHistory = useRef(false)
 
   // Create a stable Chat instance seeded with DB history — only once on mount
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -83,6 +85,19 @@ export function ChatInterface({
   const lastAssistantMessage = [...messages].reverse().find((message) => message.role === "assistant")
   const hasVisibleAssistantText = Boolean(lastAssistantMessage && getUIMessageText(lastAssistantMessage).trim())
   const showThinkingIndicator = status === "submitted" || (status === "streaming" && !hasVisibleAssistantText)
+
+  useEffect(() => {
+    const lastAssistantId = lastAssistantMessage?.id ?? null
+
+    if (!hasHydratedAssistantHistory.current) {
+      hasHydratedAssistantHistory.current = true
+      return
+    }
+
+    if (lastAssistantId && lastAssistantId !== animatedAssistantId) {
+      setAnimatedAssistantId(lastAssistantId)
+    }
+  }, [animatedAssistantId, lastAssistantMessage?.id])
 
   // Auto-scroll to bottom on new messages. Avoid "smooth" during token streaming
   // because it fights with the incoming chunks and creates a jerky feel.
@@ -252,7 +267,11 @@ export function ChatInterface({
           )}
 
           {messages.map((message) => (
-            <MessageBubble key={message.id} message={message} />
+            <MessageBubble
+              key={message.id}
+              message={message}
+              shouldAnimateReveal={message.id === animatedAssistantId}
+            />
           ))}
 
           <ThinkingIndicator isVisible={showThinkingIndicator} />

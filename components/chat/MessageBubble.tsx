@@ -1,16 +1,30 @@
 "use client"
 
-import ReactMarkdown from "react-markdown"
+import dynamic from "next/dynamic"
+import { useEffect, useMemo, useState } from "react"
 import { Command, UserRound } from "lucide-react"
 import { CitationRow } from "./CitationCard"
 import type { UIMessage } from "ai"
 import type { Citation } from "@/types/chat"
 import { cn } from "@/lib/utils"
 import { chatParticipantLabels } from "@/lib/chat/chat-surface"
-import { getUIMessageText, hasStreamingText } from "@/lib/chat/message-text"
+import {
+  getRevealableStreamText,
+  getUIMessageText,
+  hasStreamingText,
+  splitStreamTextUnits,
+} from "@/lib/chat/message-text"
+
+const MarkdownMessage = dynamic(
+  () => import("./MarkdownMessage").then((mod) => mod.MarkdownMessage),
+  {
+    loading: () => <div className="text-[15px] leading-7 text-foreground/92 dark:text-foreground/92" />,
+  }
+)
 
 interface MessageBubbleProps {
   message: UIMessage
+  shouldAnimateReveal?: boolean
 }
 
 /** Replace [SOURCE_X] markers with cleaner [X] for display */
@@ -18,14 +32,53 @@ function cleanSourceMarkers(text: string): string {
   return text.replace(/\[SOURCE_(\d+)\]/g, "[$1]")
 }
 
-export function MessageBubble({ message }: MessageBubbleProps) {
+export function MessageBubble({ message, shouldAnimateReveal = false }: MessageBubbleProps) {
   const isUser = message.role === "user"
   const text = getUIMessageText(message)
   const isStreaming = hasStreamingText(message)
+  const cleanedText = isUser ? text : cleanSourceMarkers(text)
   const metadata = message.metadata as
     | { citations?: Citation[]; triggerEvaluation?: boolean }
     | undefined
   const citations = metadata?.citations ?? []
+  const shouldUseStreamingGuard = !isUser && (isStreaming || shouldAnimateReveal)
+  const revealTargetText = useMemo(
+    () => getRevealableStreamText(cleanedText, shouldUseStreamingGuard),
+    [cleanedText, shouldUseStreamingGuard]
+  )
+  const revealUnits = useMemo(() => splitStreamTextUnits(revealTargetText), [revealTargetText])
+  const [revealedUnitCount, setRevealedUnitCount] = useState(
+    shouldUseStreamingGuard ? 0 : revealUnits.length
+  )
+
+  useEffect(() => {
+    if (!shouldUseStreamingGuard) {
+      setRevealedUnitCount(revealUnits.length)
+      return
+    }
+
+    setRevealedUnitCount((current) => {
+      if (current > revealUnits.length) return 0
+      return current
+    })
+  }, [message.id, revealUnits.length, shouldUseStreamingGuard])
+
+  useEffect(() => {
+    if (!shouldUseStreamingGuard) return
+    if (revealedUnitCount >= revealUnits.length) return
+
+    const timeout = window.setTimeout(() => {
+      setRevealedUnitCount((current) => Math.min(current + 1, revealUnits.length))
+    }, 22)
+
+    return () => window.clearTimeout(timeout)
+  }, [revealUnits.length, revealedUnitCount, shouldUseStreamingGuard])
+
+  const streamedText = useMemo(
+    () => revealUnits.slice(0, revealedUnitCount).join(""),
+    [revealUnits, revealedUnitCount]
+  )
+  const isRevealInProgress = shouldUseStreamingGuard && revealedUnitCount < revealUnits.length
 
   if (!text && citations.length === 0) return null
 
@@ -68,26 +121,15 @@ export function MessageBubble({ message }: MessageBubbleProps) {
                 "px-4 py-2.5 sm:px-4.5 sm:py-3"
               )}
             >
-              {isStreaming && !isUser ? (
+              {isRevealInProgress ? (
                 <div className="streaming-text text-[15px] leading-7 text-foreground/92 dark:text-foreground/92">
-                  {cleanSourceMarkers(text)}
+                  {streamedText}
                 </div>
               ) : (
-                <div
-                  className={cn(
-                    "prose prose-sm max-w-none",
-                    isUser ? "prose-invert" : "dark:prose-invert",
-                    "prose-p:my-1 prose-headings:my-1 prose-ul:my-1 prose-ol:my-1 prose-pre:rounded-xl prose-pre:bg-foreground prose-pre:text-background",
-                    "prose-code:text-xs prose-code:bg-background/60 prose-code:px-1 prose-code:rounded prose-strong:text-current"
-                  )}
-                >
-                  <ReactMarkdown>
-                    {isUser ? text : cleanSourceMarkers(text)}
-                  </ReactMarkdown>
-                </div>
+                <MarkdownMessage text={cleanedText} isUser={isUser} />
               )}
 
-              {!isUser && isStreaming && (
+              {!isUser && isRevealInProgress && (
                 <span className="stream-caret ml-1 inline-block h-4 w-1.5 rounded-full bg-primary/55 align-middle" aria-hidden="true" />
               )}
             </div>

@@ -169,6 +169,16 @@
   50% { opacity: 1; transform: translateY(-0.5px); }
 }
 
+@keyframes chat-fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes chat-dot-pulse {
+  0%, 100% { opacity: 0.28; transform: scale(0.92); }
+  50% { opacity: 1; transform: scale(1); }
+}
+
 @layer utilities {
   .animate-marquee {
     animation: marquee 28s linear infinite;
@@ -180,6 +190,14 @@
   .streaming-text {
     white-space: pre-wrap;
     text-wrap: pretty;
+  }
+
+  .chat-fade-in {
+    animation: chat-fade-in 180ms ease-out both;
+  }
+
+  .chat-dot-pulse {
+    animation: chat-dot-pulse 1s ease-in-out infinite;
   }
 
   .glass-panel {
