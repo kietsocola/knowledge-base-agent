@@ -1,83 +1,83 @@
-﻿import { createRequire } from "module"
-import { pathToFileURL } from "url"
+﻿import { getDocument } from "pdfjs-dist/legacy/build/pdf.mjs"
 
 type PdfResult = {
   text: string
   numpages: number
 }
 
-type PdfParseModule =
-  | ((buffer: Buffer) => Promise<PdfResult>)
-  | {
-      default?: unknown
-      PDFParse?: new (opts: { data: Uint8Array }) => {
-        getText: () => Promise<{ text: string; total: number }>
-        destroy?: () => Promise<void>
-      }
-    }
-
-type PdfParserCtor = new (opts: { data: Uint8Array }) => {
-  getText: () => Promise<{ text: string; total: number }>
-  destroy?: () => Promise<void>
+type PdfTextItem = {
+  str?: string
+  hasEOL?: boolean
 }
 
-const requireForPdf = createRequire(import.meta.url)
+export function joinPdfTextItems(items: PdfTextItem[]): string {
+  const parts: string[] = []
 
-function resolveWorkerSrc(): string | undefined {
-  const candidates = [
-    "pdf-parse/dist/worker/pdf.worker.mjs",
-    "pdf-parse/dist/pdf-parse/esm/pdf.worker.mjs",
-    "pdfjs-dist/legacy/build/pdf.worker.mjs",
-    "pdfjs-dist/build/pdf.worker.mjs",
-  ]
+  for (const item of items) {
+    const value = item.str?.trim()
+    if (!value) continue
 
-  for (const candidate of candidates) {
-    try {
-      const abs = requireForPdf.resolve(candidate)
-      return pathToFileURL(abs).toString()
-    } catch {
-      continue
+    if (parts.length > 0 && !parts.at(-1)?.endsWith("\n")) {
+      parts.push(" ")
+    }
+
+    parts.push(value)
+
+    if (item.hasEOL) {
+      parts.push("\n")
     }
   }
 
-  return undefined
+  return parts
+    .join("")
+    .replace(/ *\n */g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim()
 }
 
 export async function parsePdf(buffer: Buffer | Uint8Array): Promise<PdfResult> {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const mod = requireForPdf("pdf-parse") as PdfParseModule
-  const input = buffer instanceof Uint8Array ? Buffer.from(buffer) : buffer
+  const input =
+    buffer instanceof Buffer
+      ? new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength)
+      : buffer instanceof Uint8Array
+        ? new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength)
+        : new Uint8Array(buffer)
+  const loadingTask = getDocument({
+    data: input,
+    useWorkerFetch: false,
+    isEvalSupported: false,
+    useSystemFonts: false,
+  })
 
-  if (typeof mod === "function") {
-    return mod(input)
-  }
+  const pdf = await loadingTask.promise
 
-  const PDFParseCtor =
-    (mod as { PDFParse?: unknown }).PDFParse ??
-    (mod as { default?: { PDFParse?: unknown } }).default?.PDFParse
+  try {
+    const pageTexts: string[] = []
 
-  if (typeof PDFParseCtor === "function") {
-    const parserCtor = PDFParseCtor as PdfParserCtor
-    const ctorWithWorker = PDFParseCtor as PdfParserCtor & {
-      setWorker?: (workerSrc?: string) => string
-    }
-
-    const workerSrc = resolveWorkerSrc()
-    if (typeof ctorWithWorker.setWorker === "function") {
-      ctorWithWorker.setWorker(workerSrc)
-    }
-
-    const parser = new parserCtor({ data: new Uint8Array(input) })
-
-    try {
-      const textResult = await parser.getText()
-      return { text: textResult.text, numpages: textResult.total }
-    } finally {
-      if (typeof parser.destroy === "function") {
-        await parser.destroy().catch(() => undefined)
+    for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
+      const page = await pdf.getPage(pageNumber)
+      try {
+        const textContent = await page.getTextContent()
+        const items: PdfTextItem[] = []
+        for (const item of textContent.items) {
+          if ("str" in item) {
+            items.push({ str: item.str, hasEOL: item.hasEOL })
+          }
+        }
+        const pageText = joinPdfTextItems(items)
+        if (pageText) {
+          pageTexts.push(pageText)
+        }
+      } finally {
+        page.cleanup()
       }
     }
-  }
 
-  throw new Error("Unsupported pdf-parse export shape")
+    return {
+      text: pageTexts.join("\n\n").trim(),
+      numpages: pdf.numPages,
+    }
+  } finally {
+    await loadingTask.destroy()
+  }
 }
