@@ -3,6 +3,7 @@ import {
   createUIMessageStream,
   createUIMessageStreamResponse,
   convertToModelMessages,
+  smoothStream,
 } from "ai"
 import { cookies } from "next/headers"
 import { getIronSession } from "iron-session"
@@ -19,6 +20,7 @@ import type { RetrievedChunk } from "@/lib/rag/retriever"
 import { SESSION_OPTIONS } from "@/lib/session"
 import { authorizeOwnedSession, validateRequestedCourse } from "@/lib/security/session-authorization"
 import type { SessionData } from "@/types/lti"
+import { CHAT_STREAM_CHUNKING, CHAT_STREAM_DELAY_MS } from "@/lib/chat/stream-config"
 
 export async function POST(request: Request) {
   const body = await request.json() as {
@@ -97,6 +99,10 @@ export async function POST(request: Request) {
         model: openai(CHAT_MODEL),
         system: systemPrompt,
         messages: modelMessages,
+        experimental_transform: smoothStream({
+          chunking: CHAT_STREAM_CHUNKING,
+          delayInMs: CHAT_STREAM_DELAY_MS,
+        }),
       })
 
       writer.merge(result.toUIMessageStream())

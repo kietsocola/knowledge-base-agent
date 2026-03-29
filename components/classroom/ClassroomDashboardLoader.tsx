@@ -6,6 +6,7 @@ import { AlertCircle, BarChart3 } from "lucide-react"
 import { ClassroomDashboard } from "@/components/classroom/ClassroomDashboard"
 import { Button, buttonVariants } from "@/components/ui/button"
 import type { ClassroomOverview } from "@/types/learning"
+import { isAbortLikeError, toErrorMessage } from "@/lib/http/client-errors"
 
 interface ClassroomDashboardLoaderProps {
   courseId: string
@@ -20,9 +21,11 @@ export function ClassroomDashboardLoader({
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    const controller = new AbortController()
+
     async function fetchOverview() {
       try {
-        const response = await fetch(`/api/learning/classroom?courseId=${courseId}`)
+        const response = await fetch(`/api/learning/classroom?courseId=${courseId}`, { signal: controller.signal })
         if (!response.ok) {
           const payload = await response.json() as { error?: string }
           throw new Error(payload.error ?? "Không thể tải dashboard lớp học")
@@ -31,11 +34,13 @@ export function ClassroomDashboardLoader({
         const data = await response.json() as ClassroomOverview
         setOverview(data)
       } catch (err) {
-        setError(String(err))
+        if (isAbortLikeError(err)) return
+        setError(toErrorMessage(err, "Không thể tải dashboard lớp học"))
       }
     }
 
     fetchOverview()
+    return () => controller.abort()
   }, [courseId])
 
   if (error) {

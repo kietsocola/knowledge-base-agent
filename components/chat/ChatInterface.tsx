@@ -4,7 +4,7 @@ import Link from "next/link"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { Chat, useChat } from "@ai-sdk/react"
 import { DefaultChatTransport } from "ai"
-import { Send, PanelLeft, PanelLeftOpen, GraduationCap, AlertCircle, MessageCircleQuestion, History, MoreVertical, Lightbulb } from "lucide-react"
+import { Send, PanelLeft, PanelLeftOpen, Sparkles, AlertCircle, MessageCircleQuestion, History, MoreVertical, Compass, BookOpenText, Workflow, Command, ArrowUpRight } from "lucide-react"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { ThinkingIndicator } from "./ThinkingIndicator"
@@ -12,6 +12,8 @@ import { MessageBubble } from "./MessageBubble"
 import { Sidebar } from "@/components/layout/Sidebar"
 import { ThemeToggle } from "@/components/layout/ThemeToggle"
 import { toast } from "sonner"
+import { chatEmptyState, chatEmptyStateToneClasses, chatParticipantLabels, chatQuickActions } from "@/lib/chat/chat-surface"
+import { getUIMessageText } from "@/lib/chat/message-text"
 
 interface InitialMessage {
   id: string
@@ -76,13 +78,22 @@ export function ChatInterface({
 
   // Derived primitives — stable values, not array references
   const messageCount = messages.filter((m) => m.role === "user").length
-  // Auto-scroll to bottom on new messages
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [messages, status])
-
   const isStreaming = status === "streaming" || status === "submitted"
   const canSend = input.trim().length > 0 && !isStreaming
+  const lastAssistantMessage = [...messages].reverse().find((message) => message.role === "assistant")
+  const hasVisibleAssistantText = Boolean(lastAssistantMessage && getUIMessageText(lastAssistantMessage).trim())
+  const showThinkingIndicator = status === "submitted" || (status === "streaming" && !hasVisibleAssistantText)
+
+  // Auto-scroll to bottom on new messages. Avoid "smooth" during token streaming
+  // because it fights with the incoming chunks and creates a jerky feel.
+  useEffect(() => {
+    const behavior: ScrollBehavior = isStreaming ? "auto" : "smooth"
+    const frame = window.requestAnimationFrame(() => {
+      bottomRef.current?.scrollIntoView({ behavior, block: "end" })
+    })
+
+    return () => window.cancelAnimationFrame(frame)
+  }, [messages, status, isStreaming])
 
   function handleSubmit(e?: React.FormEvent) {
     e?.preventDefault()
@@ -122,7 +133,7 @@ export function ChatInterface({
           <button
             type="button"
             onClick={() => setDesktopSidebarExpanded(true)}
-            className="fixed left-[5rem] top-28 z-30 hidden items-center gap-2 rounded-full border border-border/70 bg-card/92 px-3 py-2 text-xs font-semibold text-primary shadow-lg backdrop-blur-lg transition-[transform,background-color] hover:-translate-y-0.5 hover:bg-card lg:flex"
+            className="fixed left-[4.5rem] top-18 z-30 hidden items-center gap-2 rounded-full border border-border/70 bg-card/92 px-3 py-1.5 text-xs font-semibold text-primary shadow-lg backdrop-blur-lg transition-[transform,background-color] hover:-translate-y-0.5 hover:bg-card lg:flex"
             aria-label="Mở thanh tri thức"
           >
             <PanelLeftOpen className="h-3.5 w-3.5" />
@@ -130,17 +141,16 @@ export function ChatInterface({
           </button>
         )}
 
-        <header className="glass-panel rule-divider flex shrink-0 items-center justify-between px-4 py-4 shadow-sm sm:px-8">
-          <div className="flex items-center gap-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-              <GraduationCap className="h-5 w-5" />
+        <header className="glass-panel rule-divider flex shrink-0 items-center justify-between px-4 py-2 shadow-sm sm:px-5">
+          <div className="flex items-center gap-3">
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl border border-primary/10 bg-primary text-primary-foreground shadow-[0_10px_24px_-18px_rgba(25,69,99,0.58)]">
+              <Command className="h-3.5 w-3.5" />
             </div>
             <div>
-              <div className="section-label before:w-5">Session channel</div>
-              <div className="mt-1 font-heading text-lg font-black leading-none">{courseName}</div>
-              <div className="mt-1 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+              <div className="font-heading text-[15px] font-black leading-none tracking-tight sm:text-base">{courseName}</div>
+              <div className="mt-0.5 flex items-center gap-1.5 text-[10px] text-muted-foreground">
                 <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                {studentName} · Chế độ học thuật
+                <span className="truncate">{studentName} · {chatParticipantLabels.assistant}</span>
               </div>
             </div>
           </div>
@@ -174,37 +184,68 @@ export function ChatInterface({
           </div>
         </header>
 
-        <div className="app-scrollbar flex-1 overflow-y-auto py-6">
+        <div className="app-scrollbar flex-1 overflow-y-auto py-2.5 sm:py-3">
           {messages.length === 0 && (
             <div className="flex h-full flex-col items-center justify-center gap-4 px-6 text-center">
-              <div className="paper-surface w-full max-w-2xl rounded-[2.3rem] p-8">
-                <div className="section-label justify-center before:hidden">Conversation start</div>
-                <div className="mt-5 flex justify-center">
-                  <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-primary text-primary-foreground shadow-lg shadow-primary/20">
-                    <GraduationCap className="h-7 w-7" />
+              <div className={`w-full max-w-3xl rounded-[1.8rem] border p-6 shadow-[0_20px_60px_-28px_rgba(15,23,32,0.18)] dark:shadow-[0_24px_72px_-30px_rgba(0,0,0,0.55)] sm:p-8 ${chatEmptyStateToneClasses.shell}`}>
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/60 pb-5 text-left">
+                  <div>
+                    <div className={`text-[11px] font-bold uppercase tracking-[0.24em] ${chatEmptyStateToneClasses.kicker}`}>
+                      {chatEmptyState.kicker}
+                    </div>
+                    <div className={`mt-2 font-heading text-3xl font-black tracking-tight ${chatEmptyStateToneClasses.title}`}>
+                      {chatEmptyState.title}
+                    </div>
+                  </div>
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-primary/10 bg-primary text-primary-foreground shadow-[0_14px_32px_-18px_rgba(25,69,99,0.55)]">
+                    <Workflow className="h-5 w-5" />
                   </div>
                 </div>
-                <div className="mt-5 font-heading text-3xl font-black">
-                  Xin chào, {studentName}!
+
+                <div className="mt-6 grid gap-4 text-left lg:grid-cols-[0.78fr_0.22fr]">
+                  <div>
+                    <div className="text-base font-semibold text-foreground">
+                      {studentName}, bạn đang ở phiên <strong>{courseName}</strong>.
+                    </div>
+                    <div className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+                      {chatEmptyState.description}
+                    </div>
+                  </div>
+                  <div className={`rounded-[1.2rem] border p-4 ${chatEmptyStateToneClasses.modeCard}`}>
+                    <div className={`text-[10px] font-bold uppercase tracking-[0.2em] ${chatEmptyStateToneClasses.modeLabel}`}>
+                      mode
+                    </div>
+                    <div className="mt-2 flex items-center gap-2 text-sm font-semibold text-primary">
+                      <Sparkles className="h-4 w-4" />
+                      Academic session
+                    </div>
+                  </div>
                 </div>
-                <div className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground">
-                  Hỏi bất kỳ câu nào về <strong>{courseName}</strong>. Trợ lý sẽ trả lời
-                  dựa trên tài liệu môn học và trả kèm trích dẫn.
-                </div>
+
                 <div className="mt-6 grid gap-3 sm:grid-cols-3">
-                  {[
-                    "Mảng là gì?",
-                    "Độ phức tạp thuật toán?",
-                    "Tóm tắt chương này cho mình",
-                  ].map((q) => (
+                  {chatQuickActions.map((q, index) => {
+                    const Icon = [Compass, BookOpenText, ArrowUpRight][index] ?? Compass
+
+                    return (
                     <button
                       key={q}
                       onClick={() => setInput(q)}
-                      className="metric-tile rounded-[1.4rem] px-4 py-3 text-xs font-semibold text-primary transition-colors hover:border-primary/30 hover:bg-primary/5"
+                      className="group rounded-[1.1rem] border border-border/70 bg-background/84 px-4 py-4 text-left transition-[border-color,background-color,transform] hover:-translate-y-0.5 hover:border-primary/24 hover:bg-card"
                     >
-                      {q}
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-primary/10 bg-primary/6 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+                          <Icon className="h-4 w-4" />
+                        </div>
+                        <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+                          Action
+                        </span>
+                      </div>
+                      <div className="mt-4 text-sm font-semibold leading-snug text-foreground">
+                        {q}
+                      </div>
                     </button>
-                  ))}
+                    )
+                  })}
                 </div>
               </div>
             </div>
@@ -214,17 +255,17 @@ export function ChatInterface({
             <MessageBubble key={message.id} message={message} />
           ))}
 
-          <ThinkingIndicator isVisible={status === "submitted"} />
+          <ThinkingIndicator isVisible={showThinkingIndicator} />
 
           <div ref={bottomRef} />
         </div>
 
         {error && (
-          <div className="mx-4 mb-2 flex items-center gap-2 rounded-2xl border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive sm:mx-8">
-            <AlertCircle className="h-4 w-4 shrink-0" />
-            {error.message}
-          </div>
-        )}
+            <div className="mx-4 mb-2 flex items-center gap-2 rounded-2xl border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive sm:mx-6">
+              <AlertCircle className="h-4 w-4 shrink-0" />
+              {error.message}
+            </div>
+          )}
 
         {isReadOnly ? (
           <div className="shrink-0 border-t border-border/60 px-4 pb-4 pt-3 sm:px-8">
@@ -245,25 +286,21 @@ export function ChatInterface({
             </div>
           </div>
         ) : (
-          <div className="glass-panel shrink-0 border-t border-border/60 px-4 pb-4 pt-4 sm:px-8 sm:pb-5">
-            <div className="mb-3 flex flex-wrap justify-center gap-2 xl:hidden">
-              {[
-                "Làm bài tập trắc nghiệm",
-                "Tóm tắt chương này",
-                "Giải thích ví dụ thực tế",
-              ].map((label) => (
+          <div className="glass-panel shrink-0 border-t border-border/60 px-4 pb-2.5 pt-2 sm:px-5 sm:pb-3">
+            <div className="mb-2 flex flex-wrap justify-center gap-2 xl:hidden">
+              {chatQuickActions.map((label) => (
                 <button
                   key={label}
                   onClick={() => setInput(label)}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-primary/10 bg-card px-4 py-2 text-xs font-semibold text-primary shadow-sm transition-colors hover:bg-primary hover:text-primary-foreground"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-primary/10 bg-card px-3 py-1.5 text-[11px] font-semibold text-primary shadow-sm transition-[border-color,background-color,color] hover:border-primary/20 hover:bg-primary hover:text-primary-foreground"
                 >
-                  <Lightbulb className="h-3 w-3" />
+                  <ArrowUpRight className="h-3 w-3" />
                   {label}
                 </button>
               ))}
             </div>
 
-            <form onSubmit={handleSubmit} className="paper-surface mx-auto flex max-w-4xl items-end gap-2 rounded-[1.9rem] p-2 sm:gap-3">
+            <form onSubmit={handleSubmit} className="mx-auto flex max-w-4xl items-end gap-2 rounded-[1.5rem] border border-border/70 bg-card/95 p-1.5 shadow-[0_18px_48px_-24px_rgba(15,23,32,0.16)] backdrop-blur-xl sm:gap-2">
               <label htmlFor="chat-input" className="sr-only">
                 Câu hỏi gửi cho trợ lý học tập
               </label>
@@ -273,8 +310,8 @@ export function ChatInterface({
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
                 aria-label="Nhập câu hỏi về tài liệu môn học"
-                placeholder="Hỏi bất kỳ điều gì về tài liệu…"
-                className="min-h-[52px] max-h-32 resize-none border-0 bg-transparent px-3 py-3 text-sm shadow-none focus-visible:ring-0"
+                placeholder="Nhập yêu cầu học tập, câu hỏi, hoặc nhiệm vụ bạn muốn xử lý…"
+                className="min-h-[42px] max-h-32 resize-none border-0 bg-transparent px-3 py-2 text-sm shadow-none focus-visible:ring-0"
                 disabled={isStreaming}
                 rows={1}
               />
@@ -283,15 +320,12 @@ export function ChatInterface({
                 size="icon"
                 disabled={!canSend}
                 aria-label="Gửi câu hỏi"
-                className="h-11 w-11 shrink-0 rounded-2xl shadow-lg shadow-primary/25"
+                className="h-9 w-9 shrink-0 rounded-full shadow-[0_12px_24px_-14px_rgba(25,69,99,0.55)]"
               >
                 <Send className="h-4 w-4" />
               </Button>
             </form>
-            <div className="mx-auto mt-2 flex max-w-4xl flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <div className="text-[10px] text-muted-foreground">
-                AI trả lời dựa trên tài liệu môn học · Shift+Enter xuống dòng
-              </div>
+            <div className="mx-auto mt-1 flex max-w-4xl items-center justify-end">
               <button
                 type="button"
                 onClick={() => {

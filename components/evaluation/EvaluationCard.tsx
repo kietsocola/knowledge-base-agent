@@ -15,6 +15,7 @@ import { buildStudyPlan } from "@/lib/planner/study-plan"
 import { StudyPlanPanel } from "@/components/planner/StudyPlanPanel"
 import type { EvaluationResult } from "@/types/evaluation"
 import type { LearningOverview } from "@/types/learning"
+import { pageWidthPresets } from "@/lib/layout/page-widths"
 
 interface EvaluationCardProps {
   result: EvaluationResult
@@ -74,10 +75,11 @@ export function EvaluationCard({
       border: "border-emerald-200/70 dark:border-emerald-400/20",
     },
   }[supportPlan.level]
+  const shellStyle = { maxWidth: `${pageWidthPresets.evaluation.maxWidth}px` }
 
   return (
-    <div id="main-content" className="min-h-screen px-4 pb-12 pt-8 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-6xl space-y-8">
+    <div id="main-content" className={`min-h-screen pb-12 pt-8 ${pageWidthPresets.evaluation.shellClassName}`}>
+      <div className="mx-auto space-y-8" style={shellStyle}>
         <motion.div
           initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: -10 }}
           animate={shouldReduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}

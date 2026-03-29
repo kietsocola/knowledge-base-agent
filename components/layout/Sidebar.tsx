@@ -27,6 +27,7 @@ import { UploadModal } from "@/components/chat/UploadModal"
 import type { SessionSummary } from "@/components/chat/ChatInterface"
 import type { LearningOverview } from "@/types/learning"
 import { buildSidebarLearningSummary } from "@/lib/learning/sidebar-summary"
+import { isAbortLikeError } from "@/lib/http/client-errors"
 
 interface Document {
   id: string
@@ -87,27 +88,39 @@ export function Sidebar({
 
   useEffect(() => {
     if (!courseId) return
+    const controller = new AbortController()
     setLoadingDocs(true)
-    fetch(`/api/documents?courseId=${courseId}`)
+    fetch(`/api/documents?courseId=${courseId}`, { signal: controller.signal })
       .then((r) => r.json())
       .then((d: unknown) => {
         const data = d as { documents?: Document[] }
         setDocs(data.documents ?? [])
         setLoadingDocs(false)
       })
-      .catch(() => setLoadingDocs(false))
+      .catch((error) => {
+        if (isAbortLikeError(error)) return
+        setLoadingDocs(false)
+      })
+
+    return () => controller.abort()
   }, [courseId, docsVersion])
 
   useEffect(() => {
     if (!sessionId) return
+    const controller = new AbortController()
     setLoadingOverview(true)
-    fetch(`/api/learning/overview?sessionId=${sessionId}`)
+    fetch(`/api/learning/overview?sessionId=${sessionId}`, { signal: controller.signal })
       .then((r) => r.json())
       .then((data: LearningOverview) => {
         setOverview(data)
         setLoadingOverview(false)
       })
-      .catch(() => setLoadingOverview(false))
+      .catch((error) => {
+        if (isAbortLikeError(error)) return
+        setLoadingOverview(false)
+      })
+
+    return () => controller.abort()
   }, [sessionId, messageCount])
 
   const EVAL_THRESHOLD = 4
@@ -142,11 +155,11 @@ export function Sidebar({
         className={cn(
           "fixed top-0 left-0 z-50 flex h-full w-80 flex-col border-r border-border/70 bg-sidebar/92 transition-transform duration-300 backdrop-blur-xl",
           "lg:static lg:z-auto lg:h-screen lg:shrink-0 lg:translate-x-0 lg:overflow-hidden lg:transition-[width]",
-          desktopCollapsed ? "lg:w-[5.75rem]" : "lg:w-[22rem]",
+          desktopCollapsed ? "lg:w-[4.75rem]" : "lg:w-[19.5rem]",
           isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
       >
-        <div className="relative flex h-full flex-col p-6 lg:p-5">
+        <div className="relative flex h-full flex-col p-6 lg:p-4">
           <div
             className="absolute -right-3 top-24 z-20 hidden h-24 w-6 cursor-ew-resize items-center justify-center rounded-full border border-border/70 bg-card/92 text-muted-foreground shadow-lg backdrop-blur-lg lg:flex"
             role="separator"
@@ -179,7 +192,7 @@ export function Sidebar({
             <GripVertical className="h-3.5 w-3.5" />
           </div>
 
-          <div className={cn("rule-divider mb-6 flex items-center justify-between pb-5", desktopCollapsed && "lg:justify-center")}>
+          <div className={cn("rule-divider mb-4 flex items-center justify-between pb-4", desktopCollapsed && "lg:justify-center")}>
             {desktopCollapsed ? (
               <button
                 type="button"
@@ -193,8 +206,8 @@ export function Sidebar({
               <>
                 <div>
                   <div className="section-label">Knowledge rail</div>
-                  <div className="mt-2 font-heading text-lg font-bold text-primary">Kho tri thức</div>
-                  <div className="text-xs text-muted-foreground">Tài liệu đồng bộ từ Moodle</div>
+                  <div className="mt-1.5 font-heading text-base font-bold text-primary">Kho tri thức</div>
+                  <div className="text-[11px] text-muted-foreground">Tài liệu môn học</div>
                 </div>
                 <div className="flex items-center gap-2">
                   <Button
@@ -258,23 +271,23 @@ export function Sidebar({
           ) : (
             <>
               <div className="app-scrollbar flex-1 overflow-y-auto pr-1">
-                <section className="pb-5">
+                <section className="pb-4">
                   <div className="flex items-start gap-3">
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/20">
-                      <BookOpen className="h-5 w-5" />
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/20">
+                      <BookOpen className="h-4.5 w-4.5" />
                     </div>
                     <div className="min-w-0">
                       <div className="section-label">Session dossier</div>
-                      <div className="mt-2 text-base font-black leading-tight text-primary">{courseName}</div>
-                      <div className="mt-1 text-xs text-muted-foreground">{studentName}</div>
+                      <div className="mt-1.5 text-sm font-black leading-tight text-primary">{courseName}</div>
+                      <div className="mt-0.5 text-[11px] text-muted-foreground">{studentName}</div>
                     </div>
                   </div>
 
-                  <div className="mt-4 grid grid-cols-3 gap-3 border-t border-border/60 pt-4">
+                  <div className="mt-3 grid grid-cols-3 gap-2 border-t border-border/60 pt-3">
                     {dossierStats.map((item) => (
                       <div key={item.label} className="relative text-center">
-                        <div className="text-xl font-black text-primary">{item.value}</div>
-                        <div className="mt-1 text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+                        <div className="text-lg font-black text-primary">{item.value}</div>
+                        <div className="mt-0.5 text-[9px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
                           {item.label}
                         </div>
                       </div>
@@ -282,11 +295,11 @@ export function Sidebar({
                   </div>
                 </section>
 
-                <section className="border-t border-border/60 py-5">
+                <section className="border-t border-border/60 py-4">
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <div className="section-label">Session pulse</div>
-                      <div className="mt-2 text-base font-black text-foreground">
+                      <div className="mt-1.5 text-sm font-black text-foreground">
                         {evalUnlocked ? "Đủ dữ liệu để đánh giá" : `Còn ${nextEvalAt} câu để mở báo cáo`}
                       </div>
                     </div>
@@ -295,33 +308,33 @@ export function Sidebar({
                     </div>
                   </div>
 
-                  <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-border/60">
+                  <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-border/60">
                     <div
                       className="h-full rounded-full bg-primary transition-all duration-500"
                       style={{ width: `${(evalProgress / EVAL_THRESHOLD) * 100}%` }}
                     />
                   </div>
 
-                  <div className="mt-4 grid grid-cols-3 gap-0 overflow-hidden rounded-[1.15rem] border border-border/60 text-sm">
-                    <div className="border-r border-border/60 px-3 py-3">
-                      <div className="text-2xl font-black text-primary">{messageCount}</div>
+                  <div className="mt-3 grid grid-cols-3 gap-0 overflow-hidden rounded-[1rem] border border-border/60 text-sm">
+                    <div className="border-r border-border/60 px-2.5 py-2.5">
+                      <div className="text-xl font-black text-primary">{messageCount}</div>
                       <div className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">câu hỏi</div>
                     </div>
-                    <div className="border-r border-border/60 px-3 py-3">
-                      <div className="text-2xl font-black text-primary">{overview?.totalEvaluations ?? 0}</div>
+                    <div className="border-r border-border/60 px-2.5 py-2.5">
+                      <div className="text-xl font-black text-primary">{overview?.totalEvaluations ?? 0}</div>
                       <div className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">đánh giá</div>
                     </div>
-                    <div className="px-3 py-3">
-                      <div className="text-2xl font-black text-primary">{overview?.totalLearningEvents ?? 0}</div>
+                    <div className="px-2.5 py-2.5">
+                      <div className="text-xl font-black text-primary">{overview?.totalLearningEvents ?? 0}</div>
                       <div className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">events</div>
                     </div>
                   </div>
 
-                  <div className="mt-4 flex items-center justify-between gap-3">
-                    <div className="text-xs leading-relaxed text-muted-foreground">
+                  <div className="mt-3 flex items-center justify-between gap-3">
+                    <div className="text-[11px] leading-relaxed text-muted-foreground">
                       {evalUnlocked
-                        ? "Có thể chuyển sang báo cáo để xem điểm mạnh, khoảng trống và lộ trình tiếp theo."
-                        : "Tiếp tục hỏi đáp để hệ thống có đủ tín hiệu cho diagnosis và planner flow."}
+                        ? "Đủ tín hiệu để xem báo cáo học tập."
+                        : "Tiếp tục hỏi đáp để mở báo cáo."}
                     </div>
                     {evalUnlocked ? (
                       <a
@@ -337,34 +350,34 @@ export function Sidebar({
                   </div>
                 </section>
 
-                <section className="border-t border-border/60 py-5">
+                <section className="border-t border-border/60 py-4">
                   <div className="flex items-center justify-between gap-3">
                     <div>
                       <div className="section-label">Learning focus</div>
-                      <div className="mt-2 text-sm font-bold text-foreground">
+                      <div className="mt-1.5 text-sm font-bold text-foreground">
                         {learningSummary?.primaryConcept ?? "Bắt đầu hỏi để tạo learning signal"}
                       </div>
                     </div>
                     <Clock3 className="h-4 w-4 shrink-0 text-primary" />
                   </div>
 
-                  <div className="mt-3 text-xs leading-relaxed text-muted-foreground">
-                    {learningSummary?.secondaryLabel ?? "Rail bên trái sẽ cập nhật concept, nhịp học và checkpoint ngay trong lúc chat."}
+                  <div className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
+                    {learningSummary?.secondaryLabel ?? "Rail sẽ cập nhật concept và checkpoint trong lúc chat."}
                   </div>
 
-                  <div className="mt-4 grid grid-cols-2 gap-0 overflow-hidden rounded-[1.15rem] border border-border/60">
-                    <div className="px-3 py-3">
+                  <div className="mt-3 grid grid-cols-2 gap-0 overflow-hidden rounded-[1rem] border border-border/60">
+                    <div className="px-3 py-2.5">
                       <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Concept</div>
-                      <div className="mt-2 text-2xl font-black text-primary">{overview?.totalConcepts ?? 0}</div>
+                      <div className="mt-1.5 text-xl font-black text-primary">{overview?.totalConcepts ?? 0}</div>
                     </div>
-                    <div className="border-l border-border/60 px-3 py-3">
+                    <div className="border-l border-border/60 px-3 py-2.5">
                       <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">Hoạt động</div>
-                      <div className="mt-2 text-2xl font-black text-primary">{overview?.totalLearningEvents ?? 0}</div>
+                      <div className="mt-1.5 text-xl font-black text-primary">{overview?.totalLearningEvents ?? 0}</div>
                     </div>
                   </div>
                 </section>
 
-                <section className="border-t border-border/60 py-5">
+                <section className="border-t border-border/60 py-4">
                   <div className="mb-2 flex items-center gap-2">
                     <History className="h-4 w-4 text-primary" />
                     <span className="text-[11px] font-bold uppercase tracking-[0.22em] text-muted-foreground">
@@ -373,7 +386,7 @@ export function Sidebar({
                   </div>
 
                   {pastSessions.length === 0 ? (
-                    <div className="paper-surface rounded-2xl px-4 py-3 text-[11px] italic text-muted-foreground">
+                    <div className="paper-surface rounded-2xl px-3 py-2.5 text-[11px] italic text-muted-foreground">
                       Chưa có phiên nào.
                     </div>
                   ) : (
@@ -394,7 +407,7 @@ export function Sidebar({
                               )}
                             >
                               <div className="flex items-start gap-3">
-                                <div className={cn("mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border", isViewed ? "border-primary/10 bg-primary text-primary-foreground" : "border-border/50 bg-card/60 text-muted-foreground")}>
+                                <div className={cn("mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-xl border", isViewed ? "border-primary/10 bg-primary text-primary-foreground" : "border-border/50 bg-card/60 text-muted-foreground")}>
                                   <MessageSquare className="h-3.5 w-3.5" />
                                 </div>
                                 <div className="min-w-0 flex-1">
@@ -435,7 +448,7 @@ export function Sidebar({
                   )}
                 </section>
 
-                <section className="border-t border-border/60 py-5">
+                <section className="border-t border-border/60 py-4">
                   <div className="mb-2 flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2">
                       <FileStack className="h-4 w-4 text-primary" />
@@ -458,14 +471,14 @@ export function Sidebar({
                       <Skeleton className="h-5 w-3/4" />
                     </div>
                   ) : docs.length === 0 ? (
-                    <div className="paper-surface rounded-2xl px-4 py-3 text-xs italic text-muted-foreground">
+                    <div className="paper-surface rounded-2xl px-3 py-2.5 text-xs italic text-muted-foreground">
                       Chưa có tài liệu nào được ingest.
                     </div>
                   ) : (
                     <ul className="space-y-1.5">
                       {docs.map((doc) => (
-                        <li key={doc.id} className="grid grid-cols-[40px_1fr] gap-3 rounded-[0.9rem] border-b border-border/40 py-3 last:border-b-0">
-                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                        <li key={doc.id} className="grid grid-cols-[36px_1fr] gap-2.5 rounded-[0.9rem] border-b border-border/40 py-2.5 last:border-b-0">
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
                             <FileText className="h-4 w-4" />
                           </div>
                           <div className="min-w-0">
@@ -483,7 +496,7 @@ export function Sidebar({
                 {viewerRole && viewerRole !== "learner" && (
                   <a
                     href="/classroom"
-                    className="mt-1 inline-flex items-center justify-between rounded-full border border-primary/15 bg-primary/6 px-4 py-3 text-sm font-semibold text-primary transition-[background-color,color,transform] hover:-translate-y-0.5 hover:bg-primary hover:text-primary-foreground"
+                  className="mt-1 inline-flex items-center justify-between rounded-full border border-primary/15 bg-primary/6 px-4 py-2.5 text-sm font-semibold text-primary transition-[background-color,color,transform] hover:-translate-y-0.5 hover:bg-primary hover:text-primary-foreground"
                   >
                     <span>Dashboard lớp học</span>
                     <BarChart3 className="h-4 w-4" />
@@ -499,7 +512,7 @@ export function Sidebar({
                 onSuccess={() => setDocsVersion((v) => v + 1)}
               />
 
-              <div className="mt-4 pt-4">
+              <div className="mt-3 pt-3">
                 <a
                   href="/api/health"
                   target="_blank"

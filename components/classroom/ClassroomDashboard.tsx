@@ -4,6 +4,7 @@ import { Activity, AlertTriangle, BookOpen, CalendarClock, GraduationCap, Trendi
 import { ActivityTimelineChart } from "@/components/learning/ActivityTimelineChart"
 import { InterventionAlertsPanel } from "@/components/learning/InterventionAlertsPanel"
 import type { ClassroomOverview } from "@/types/learning"
+import { pageWidthPresets } from "@/lib/layout/page-widths"
 
 interface ClassroomDashboardProps {
   overview: ClassroomOverview
@@ -32,10 +33,11 @@ export function ClassroomDashboard({ overview, courseName }: ClassroomDashboardP
     { label: "Phiên học đã tạo", value: overview.totalSessions, Icon: CalendarClock },
     { label: "Lần đánh giá", value: overview.totalEvaluations, Icon: TrendingUp },
   ]
+  const shellStyle = { maxWidth: `${pageWidthPresets.classroom.maxWidth}px` }
 
   return (
-    <div className="min-h-screen px-4 pb-12 pt-8 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-7xl space-y-8">
+    <div className={`min-h-screen pb-12 pt-8 ${pageWidthPresets.classroom.shellClassName}`}>
+      <div className="mx-auto space-y-8" style={shellStyle}>
         <div className="paper-surface flex flex-col gap-4 rounded-[2.4rem] px-6 py-6 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <div className="section-label">Instructor command</div>

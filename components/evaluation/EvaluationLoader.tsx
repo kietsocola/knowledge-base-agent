@@ -8,6 +8,7 @@ import { Button, buttonVariants } from "@/components/ui/button"
 import { EvaluationCard } from "./EvaluationCard"
 import type { EvaluationResult } from "@/types/evaluation"
 import type { LearningOverview } from "@/types/learning"
+import { isAbortLikeError, toErrorMessage } from "@/lib/http/client-errors"
 
 interface EvaluationLoaderProps {
   sessionId: string
@@ -38,6 +39,7 @@ export function EvaluationLoader({
 
   useEffect(() => {
     let interval: NodeJS.Timeout | undefined
+    const controller = new AbortController()
 
     async function fetchEvaluation() {
       if (!shouldReduceMotion) {
@@ -52,8 +54,9 @@ export function EvaluationLoader({
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ sessionId }),
+            signal: controller.signal,
           }),
-          fetch(`/api/learning/overview?sessionId=${sessionId}`),
+          fetch(`/api/learning/overview?sessionId=${sessionId}`, { signal: controller.signal }),
         ])
 
         if (!evaluationRes.ok) {
@@ -74,15 +77,19 @@ export function EvaluationLoader({
         setResult(evaluationData)
         setOverview(overviewData)
       } catch (err) {
-        setError(String(err))
+        if (isAbortLikeError(err)) return
+        setError(toErrorMessage(err, "Không thể tải dữ liệu đánh giá"))
       } finally {
         if (interval) clearInterval(interval)
-        setLoading(false)
+        if (!controller.signal.aborted) {
+          setLoading(false)
+        }
       }
     }
 
     fetchEvaluation()
     return () => {
+      controller.abort()
       if (interval) clearInterval(interval)
     }
   }, [sessionId, shouldReduceMotion])

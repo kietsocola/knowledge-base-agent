@@ -107,7 +107,7 @@ export function UploadModal({
           </p>
         </SheetHeader>
 
-        <div className="mt-6 flex flex-1 flex-col gap-5 overflow-y-auto pb-4">
+        <div className="mt-6 flex flex-1 flex-col gap-5 overflow-y-auto px-4 pb-4">
           {/* Drop zone */}
           <div
             onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
@@ -163,8 +163,11 @@ export function UploadModal({
 
           {/* Doc name */}
           <div className="space-y-1.5">
-            <label className="text-sm font-semibold">Tên tài liệu</label>
+            <label htmlFor="upload-doc-name" className="text-sm font-semibold">
+              Tên tài liệu
+            </label>
             <Input
+              id="upload-doc-name"
               value={docName}
               onChange={(e) => setDocName(e.target.value)}
               placeholder="VD: Giáo trình CTDL Chương 1"

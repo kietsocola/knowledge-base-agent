@@ -164,10 +164,24 @@
   100% { transform: translateX(-50%); }
 }
 
+@keyframes stream-caret {
+  0%, 100% { opacity: 0.28; transform: translateY(0); }
+  50% { opacity: 1; transform: translateY(-0.5px); }
+}
+
 @layer utilities {
   .animate-marquee {
     animation: marquee 28s linear infinite;
   }
+  .stream-caret {
+    animation: stream-caret 0.9s ease-in-out infinite;
+  }
+
+  .streaming-text {
+    white-space: pre-wrap;
+    text-wrap: pretty;
+  }
+
   .glass-panel {
     background: rgba(255, 253, 248, 0.78);
     backdrop-filter: blur(20px);
