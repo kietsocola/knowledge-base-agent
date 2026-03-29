@@ -6,6 +6,7 @@ import { BarChart3, Loader2, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { EvaluationCard } from "./EvaluationCard"
 import type { EvaluationResult } from "@/types/evaluation"
+import type { LearningOverview } from "@/types/learning"
 
 interface EvaluationLoaderProps {
   sessionId: string
@@ -19,6 +20,7 @@ export function EvaluationLoader({
   courseName,
 }: EvaluationLoaderProps) {
   const [result, setResult] = useState<EvaluationResult | null>(null)
+  const [overview, setOverview] = useState<LearningOverview | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [step, setStep] = useState(0)
@@ -39,19 +41,32 @@ export function EvaluationLoader({
       }, 800)
 
       try {
-        const res = await fetch("/api/evaluation", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ sessionId }),
-        })
+        const [evaluationRes, overviewRes] = await Promise.all([
+          fetch("/api/evaluation", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ sessionId }),
+          }),
+          fetch(`/api/learning/overview?sessionId=${sessionId}`),
+        ])
 
-        if (!res.ok) {
-          const err = await res.json() as { error?: string }
+        if (!evaluationRes.ok) {
+          const err = await evaluationRes.json() as { error?: string }
           throw new Error(err.error ?? "Evaluation failed")
         }
 
-        const data = await res.json() as EvaluationResult
-        setResult(data)
+        if (!overviewRes.ok) {
+          const err = await overviewRes.json() as { error?: string }
+          throw new Error(err.error ?? "Learning overview failed")
+        }
+
+        const [evaluationData, overviewData] = await Promise.all([
+          evaluationRes.json() as Promise<EvaluationResult>,
+          overviewRes.json() as Promise<LearningOverview>,
+        ])
+
+        setResult(evaluationData)
+        setOverview(overviewData)
       } catch (err) {
         setError(String(err))
       } finally {
@@ -122,11 +137,12 @@ export function EvaluationLoader({
     )
   }
 
-  if (!result) return null
+  if (!result || !overview) return null
 
   return (
     <EvaluationCard
       result={result}
+      overview={overview}
       sessionId={sessionId}
       studentName={studentName}
       courseName={courseName}

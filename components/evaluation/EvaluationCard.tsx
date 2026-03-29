@@ -8,11 +8,14 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { EvaluationRadarChart } from "./RadarChart"
+import { LearningTrackingDashboard } from "./LearningTrackingDashboard"
 import { buildSupportPlan } from "@/lib/evaluation/support-plan"
 import type { EvaluationResult } from "@/types/evaluation"
+import type { LearningOverview } from "@/types/learning"
 
 interface EvaluationCardProps {
   result: EvaluationResult
+  overview: LearningOverview
   sessionId: string
   studentName: string
   courseName: string
@@ -39,6 +42,7 @@ function CountUpScore({ target }: { target: number }) {
 
 export function EvaluationCard({
   result,
+  overview,
   sessionId,
   studentName,
   courseName,
@@ -195,6 +199,14 @@ export function EvaluationCard({
             </div>
           </motion.div>
         )}
+
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.33 }}
+        >
+          <LearningTrackingDashboard overview={overview} />
+        </motion.div>
 
         <motion.div
           initial={{ opacity: 0, y: 10 }}
