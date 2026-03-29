@@ -45,7 +45,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
         className={cn(
           "mt-1 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl text-[11px] font-bold shadow-sm",
           isUser
-            ? "bg-slate-200 text-slate-700"
+            ? "bg-accent text-foreground"
             : "bg-primary text-primary-foreground shadow-primary/20"
         )}
       >
@@ -57,7 +57,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
           "max-w-[86%] rounded-[1.6rem] px-5 py-4 shadow-sm",
           isUser
             ? "bg-primary text-primary-foreground rounded-tr-md shadow-lg shadow-primary/20"
-            : "rounded-tl-md border border-white/80 bg-white/90 text-foreground"
+            : "rounded-tl-md border border-border/70 bg-card/90 text-foreground"
         )}
       >
         <div
@@ -66,7 +66,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
             isUser
               ? "prose-invert"
               : "dark:prose-invert",
-            "prose-p:my-1 prose-headings:my-1 prose-ul:my-1 prose-ol:my-1 prose-pre:rounded-2xl prose-pre:bg-slate-950 prose-pre:text-slate-100",
+            "prose-p:my-1 prose-headings:my-1 prose-ul:my-1 prose-ol:my-1 prose-pre:rounded-2xl prose-pre:bg-foreground prose-pre:text-background",
             "prose-code:text-xs prose-code:bg-background/60 prose-code:px-1 prose-code:rounded prose-strong:text-current"
           )}
         >

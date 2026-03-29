@@ -1,11 +1,12 @@
 "use client"
 
+import Link from "next/link"
 import { useEffect, useState } from "react"
 import { motion } from "framer-motion"
 import { CheckCircle2, AlertCircle, BookOpen, ArrowRight, MessageSquare, GraduationCap } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+import { Button, buttonVariants } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { EvaluationRadarChart } from "./RadarChart"
 import { LearningTrackingDashboard } from "./LearningTrackingDashboard"
@@ -55,24 +56,24 @@ export function EvaluationCard({
   const studyPlan = buildStudyPlan(result, overview)
   const supportTone = {
     high: {
-      badge: "bg-rose-100 text-rose-700",
-      dot: "bg-rose-500",
-      border: "border-rose-100",
+      badge: "bg-rose-100 text-rose-700 dark:bg-rose-400/15 dark:text-rose-200",
+      dot: "bg-rose-500 dark:bg-rose-300",
+      border: "border-rose-200/70 dark:border-rose-400/20",
     },
     medium: {
-      badge: "bg-amber-100 text-amber-700",
-      dot: "bg-amber-500",
-      border: "border-amber-100",
+      badge: "bg-amber-100 text-amber-700 dark:bg-amber-400/15 dark:text-amber-200",
+      dot: "bg-amber-500 dark:bg-amber-300",
+      border: "border-amber-200/70 dark:border-amber-400/20",
     },
     low: {
-      badge: "bg-emerald-100 text-emerald-700",
-      dot: "bg-emerald-500",
-      border: "border-emerald-100",
+      badge: "bg-emerald-100 text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-200",
+      dot: "bg-emerald-500 dark:bg-emerald-300",
+      border: "border-emerald-200/70 dark:border-emerald-400/20",
     },
   }[supportPlan.level]
 
   return (
-    <div className="min-h-screen px-4 pb-12 pt-8 sm:px-6 lg:px-8">
+    <div id="main-content" className="min-h-screen px-4 pb-12 pt-8 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-6xl space-y-8">
         <motion.div
           initial={{ opacity: 0, y: -10 }}
@@ -90,7 +91,7 @@ export function EvaluationCard({
               {studentName} · {courseName}
             </div>
           </div>
-          <div className="rounded-full bg-emerald-100 px-4 py-2 text-xs font-bold text-emerald-700">
+          <div className="rounded-full bg-emerald-100 px-4 py-2 text-xs font-bold text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-200">
             Hoàn thành phân tích
           </div>
         </motion.div>
@@ -99,7 +100,7 @@ export function EvaluationCard({
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.1 }}
-          className="overflow-hidden rounded-[2rem] bg-gradient-to-br from-primary to-[#0066ff] p-8 text-white shadow-[0_24px_70px_rgba(0,80,203,0.24)]"
+          className="overflow-hidden rounded-[2rem] bg-gradient-to-br from-primary to-secondary p-8 text-white shadow-[0_24px_70px_rgba(25,69,99,0.24)]"
         >
           <div className="grid gap-8 lg:grid-cols-[0.72fr_0.28fr] lg:items-center">
             <div className="flex items-start gap-5">
@@ -130,7 +131,7 @@ export function EvaluationCard({
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.2 }}
-            className="lg:col-span-8 rounded-[2rem] border border-white/70 bg-white/85 p-6 shadow-sm"
+            className="lg:col-span-8 rounded-[2rem] border border-border/70 bg-card/90 p-6 shadow-sm"
           >
             <div className="mb-6 flex items-center justify-between gap-4">
               <div>
@@ -152,30 +153,30 @@ export function EvaluationCard({
             transition={{ delay: 0.25 }}
             className="lg:col-span-4 space-y-4"
           >
-            <div className="rounded-[1.75rem] border border-white/70 bg-white/85 p-6 shadow-sm">
+            <div className="rounded-[1.75rem] border border-border/70 bg-card/90 p-6 shadow-sm">
               <div className="mb-4 flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                <CheckCircle2 className="h-4 w-4 text-emerald-500 dark:text-emerald-300" />
                 <div className="text-sm font-bold">Điểm mạnh</div>
               </div>
               <ul className="space-y-3">
                 {result.strengths.map((s, i) => (
                   <li key={i} className="flex items-start gap-2 text-sm leading-relaxed">
-                    <div className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-emerald-500" />
+                    <div className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-emerald-500 dark:bg-emerald-300" />
                     {s}
                   </li>
                 ))}
               </ul>
             </div>
 
-            <div className="rounded-[1.75rem] border border-white/70 bg-white/85 p-6 shadow-sm">
+            <div className="rounded-[1.75rem] border border-border/70 bg-card/90 p-6 shadow-sm">
               <div className="mb-4 flex items-center gap-2">
-                <AlertCircle className="h-4 w-4 text-amber-500" />
+                <AlertCircle className="h-4 w-4 text-amber-500 dark:text-amber-300" />
                 <div className="text-sm font-bold">Cần cải thiện</div>
               </div>
               <ul className="space-y-3">
                 {result.gaps.map((g, i) => (
                   <li key={i} className="flex items-start gap-2 text-sm leading-relaxed">
-                    <div className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-amber-500" />
+                    <div className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-amber-500 dark:bg-amber-300" />
                     {g}
                   </li>
                 ))}
@@ -189,7 +190,7 @@ export function EvaluationCard({
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="rounded-[2rem] border border-white/70 bg-white/85 p-6 shadow-sm"
+            className="rounded-[2rem] border border-border/70 bg-card/90 p-6 shadow-sm"
           >
             <div className="mb-4 flex items-center gap-2">
               <BookOpen className="h-4 w-4 text-primary" />
@@ -205,27 +206,29 @@ export function EvaluationCard({
           </motion.div>
         )}
 
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.33 }}
-        >
-          <LearningTrackingDashboard overview={overview} />
-        </motion.div>
+        <div className="grid gap-6 xl:grid-cols-[1.08fr_0.92fr]">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.33 }}
+          >
+            <LearningTrackingDashboard overview={overview} />
+          </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.34 }}
-        >
-          <StudyPlanPanel plan={studyPlan} />
-        </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.34 }}
+          >
+            <StudyPlanPanel plan={studyPlan} />
+          </motion.div>
+        </div>
 
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.35 }}
-          className={`rounded-[2rem] border ${supportTone.border} bg-white/85 p-6 shadow-sm`}
+          className={`rounded-[2rem] border ${supportTone.border} bg-card/90 p-6 shadow-sm`}
         >
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div>
@@ -252,7 +255,7 @@ export function EvaluationCard({
           </div>
 
           {supportPlan.shouldEscalateToInstructor && (
-            <div className="mt-5 rounded-[1.25rem] bg-rose-50 px-4 py-3 text-sm text-rose-700">
+            <div className="mt-5 rounded-[1.25rem] bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:bg-rose-950/20 dark:text-rose-200">
               Nên chuẩn bị câu hỏi cụ thể và trao đổi thêm với giảng viên để được hỗ trợ trực tiếp.
             </div>
           )}
@@ -264,26 +267,37 @@ export function EvaluationCard({
           transition={{ delay: 0.4 }}
           className="flex flex-wrap justify-center gap-3"
         >
-          <a href={`/chat/${sessionId}`}>
-            <Button variant="outline" className="gap-2 rounded-full bg-white px-6">
-              <MessageSquare className="w-4 h-4" />
-              Tiếp tục hỏi đáp
-            </Button>
-          </a>
+          <Link
+            href={`/chat/${sessionId}`}
+            className={buttonVariants({
+              variant: "outline",
+              className: "gap-2 rounded-full bg-card px-6",
+            })}
+          >
+            <MessageSquare className="w-4 h-4" />
+            Tiếp tục hỏi đáp
+          </Link>
           {viewerRole && viewerRole !== "learner" && (
-            <a href="/classroom">
-              <Button variant="outline" className="gap-2 rounded-full bg-white px-6">
-                <GraduationCap className="w-4 h-4" />
-                Xem dashboard lớp học
-              </Button>
-            </a>
+            <Link
+              href="/classroom"
+              className={buttonVariants({
+                variant: "outline",
+                className: "gap-2 rounded-full bg-card px-6",
+              })}
+            >
+              <GraduationCap className="w-4 h-4" />
+              Xem dashboard lớp học
+            </Link>
           )}
-          <a href="/portal">
-            <Button className="gap-2 rounded-full px-6">
-              Bắt đầu phiên mới
-              <ArrowRight className="w-4 h-4" />
-            </Button>
-          </a>
+          <Link
+            href="/portal"
+            className={buttonVariants({
+              className: "gap-2 rounded-full px-6",
+            })}
+          >
+            Bắt đầu phiên mới
+            <ArrowRight className="w-4 h-4" />
+          </Link>
         </motion.div>
 
         <div className="pb-4 text-center text-[10px] text-muted-foreground">

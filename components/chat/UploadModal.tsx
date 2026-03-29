@@ -177,7 +177,7 @@ export function UploadModal({
             <div className="flex items-start gap-3 rounded-2xl bg-primary/5 p-4 text-sm">
               <Loader2 className="mt-0.5 h-5 w-5 shrink-0 animate-spin text-primary" />
               <div>
-                <div className="font-semibold text-primary">Đang xử lý...</div>
+                  <div className="font-semibold text-primary">Đang xử lý…</div>
                 <div className="mt-0.5 text-xs text-muted-foreground">
                   Đọc PDF → Chia nhỏ → Tạo embedding → Lưu vào Supabase
                 </div>
@@ -218,7 +218,7 @@ export function UploadModal({
               {status === "uploading" ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Đang xử lý...
+                  Đang xử lý…
                 </>
               ) : (
                 "Bắt đầu ingest"

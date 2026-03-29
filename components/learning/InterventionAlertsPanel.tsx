@@ -11,18 +11,18 @@ interface InterventionAlertsPanelProps {
 
 const alertTone = {
   high: {
-    container: "border-rose-100 bg-rose-50/70",
-    badge: "bg-rose-100 text-rose-700",
+    container: "border-rose-200/70 bg-rose-50/80 dark:border-rose-400/20 dark:bg-rose-950/20",
+    badge: "bg-rose-100 text-rose-700 dark:bg-rose-400/15 dark:text-rose-200",
     icon: AlertTriangle,
   },
   medium: {
-    container: "border-amber-100 bg-amber-50/70",
-    badge: "bg-amber-100 text-amber-700",
+    container: "border-amber-200/70 bg-amber-50/80 dark:border-amber-400/20 dark:bg-amber-950/20",
+    badge: "bg-amber-100 text-amber-700 dark:bg-amber-400/15 dark:text-amber-200",
     icon: BellRing,
   },
   low: {
-    container: "border-emerald-100 bg-emerald-50/70",
-    badge: "bg-emerald-100 text-emerald-700",
+    container: "border-emerald-200/70 bg-emerald-50/80 dark:border-emerald-400/20 dark:bg-emerald-950/20",
+    badge: "bg-emerald-100 text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-200",
     icon: CheckCircle2,
   },
 } satisfies Record<InterventionAlert["severity"], {
@@ -37,7 +37,7 @@ export function InterventionAlertsPanel({
   description,
 }: InterventionAlertsPanelProps) {
   return (
-    <div className="rounded-[2rem] border border-white/70 bg-white/85 p-6 shadow-sm">
+    <div className="rounded-[2rem] border border-border/70 bg-card/90 p-6 shadow-sm">
       <div>
         <div className="text-sm font-bold">{title}</div>
         <div className="mt-1 text-xs text-muted-foreground">{description}</div>
@@ -52,7 +52,7 @@ export function InterventionAlertsPanel({
             <div key={alert.id} className={`rounded-[1.5rem] border p-5 ${tone.container}`}>
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div className="flex items-start gap-3">
-                  <div className="mt-0.5 rounded-2xl bg-white/80 p-2">
+                  <div className="mt-0.5 rounded-2xl bg-card/80 p-2">
                     <Icon className="h-4 w-4" />
                   </div>
                   <div>
@@ -65,7 +65,7 @@ export function InterventionAlertsPanel({
                 </div>
               </div>
 
-              <div className="mt-4 rounded-[1.1rem] bg-white/80 px-4 py-3 text-sm">
+              <div className="mt-4 rounded-[1.1rem] bg-card/80 px-4 py-3 text-sm">
                 <span className="font-semibold">Hành động đề xuất:</span> {alert.recommendedAction}
               </div>
             </div>

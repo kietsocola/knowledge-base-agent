@@ -56,7 +56,7 @@ export function ClassroomDashboard({ overview, courseName }: ClassroomDashboardP
 
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {stats.map(({ label, value, Icon }) => (
-            <div key={label} className="rounded-[1.5rem] border border-white/80 bg-white/90 p-5 shadow-sm">
+            <div key={label} className="rounded-[1.5rem] border border-border/70 bg-card/90 p-5 shadow-sm">
               <div className="flex items-center gap-2 text-primary">
                 <Icon className="h-4 w-4" />
                 <div className="text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
@@ -82,8 +82,8 @@ export function ClassroomDashboard({ overview, courseName }: ClassroomDashboardP
               description="Thể hiện mức độ hỏi đáp và các mốc đánh giá theo từng ngày có hoạt động."
             />
 
-            <section className="rounded-[2rem] border border-rose-100 bg-white/90 p-6 shadow-sm">
-              <div className="flex items-center gap-2 text-rose-700">
+            <section className="rounded-[2rem] border border-rose-200/70 bg-card/90 p-6 shadow-sm dark:border-rose-400/20">
+              <div className="flex items-center gap-2 text-rose-700 dark:text-rose-200">
                 <AlertTriangle className="h-4 w-4" />
                 <div className="text-sm font-bold">Concept yếu chung của lớp</div>
               </div>
@@ -95,13 +95,13 @@ export function ClassroomDashboard({ overview, courseName }: ClassroomDashboardP
                     <div key={concept.conceptName}>
                       <div className="flex items-center justify-between gap-4 text-sm">
                         <span>{concept.conceptName}</span>
-                        <span className="font-semibold text-rose-700">
+                        <span className="font-semibold text-rose-700 dark:text-rose-200">
                           {formatPercent(concept.averageMasteryScore)} · {concept.studentCount} SV
                         </span>
                       </div>
-                      <div className="mt-2 h-2 rounded-full bg-rose-100">
+                      <div className="mt-2 h-2 rounded-full bg-rose-100 dark:bg-rose-400/15">
                         <div
-                          className="h-full rounded-full bg-rose-500"
+                          className="h-full rounded-full bg-rose-500 dark:bg-rose-300"
                           style={{ width: `${concept.averageMasteryScore * 100}%` }}
                         />
                       </div>
@@ -111,8 +111,8 @@ export function ClassroomDashboard({ overview, courseName }: ClassroomDashboardP
               </div>
             </section>
 
-            <section className="rounded-[2rem] border border-emerald-100 bg-white/90 p-6 shadow-sm">
-              <div className="flex items-center gap-2 text-emerald-700">
+            <section className="rounded-[2rem] border border-emerald-200/70 bg-card/90 p-6 shadow-sm dark:border-emerald-400/20">
+              <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-200">
                 <BookOpen className="h-4 w-4" />
                 <div className="text-sm font-bold">Concept nắm tốt nhất</div>
               </div>
@@ -124,13 +124,13 @@ export function ClassroomDashboard({ overview, courseName }: ClassroomDashboardP
                     <div key={concept.conceptName}>
                       <div className="flex items-center justify-between gap-4 text-sm">
                         <span>{concept.conceptName}</span>
-                        <span className="font-semibold text-emerald-700">
+                        <span className="font-semibold text-emerald-700 dark:text-emerald-200">
                           {formatPercent(concept.averageMasteryScore)} · {concept.studentCount} SV
                         </span>
                       </div>
-                      <div className="mt-2 h-2 rounded-full bg-emerald-100">
+                      <div className="mt-2 h-2 rounded-full bg-emerald-100 dark:bg-emerald-400/15">
                         <div
-                          className="h-full rounded-full bg-emerald-500"
+                          className="h-full rounded-full bg-emerald-500 dark:bg-emerald-300"
                           style={{ width: `${concept.averageMasteryScore * 100}%` }}
                         />
                       </div>
@@ -141,7 +141,7 @@ export function ClassroomDashboard({ overview, courseName }: ClassroomDashboardP
             </section>
           </div>
 
-          <section className="rounded-[2rem] border border-white/70 bg-white/90 p-6 shadow-sm">
+          <section className="rounded-[2rem] border border-border/70 bg-card/90 p-6 shadow-sm">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <div className="text-sm font-bold">Sinh viên cần chú ý</div>
@@ -149,21 +149,21 @@ export function ClassroomDashboard({ overview, courseName }: ClassroomDashboardP
                   Ưu tiên những trường hợp chưa có đánh giá hoặc có nhiều concept dưới ngưỡng.
                 </div>
               </div>
-              <div className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-700">
+              <div className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-700 dark:bg-amber-400/15 dark:text-amber-200">
                 {overview.studentsNeedingAttention.length} trường hợp
               </div>
             </div>
 
             <div className="mt-5 space-y-3">
               {overview.studentsNeedingAttention.length === 0 ? (
-                <div className="rounded-[1.25rem] bg-emerald-50 px-4 py-4 text-sm text-emerald-700">
+                <div className="rounded-[1.25rem] bg-emerald-50 px-4 py-4 text-sm text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-200">
                   Chưa có sinh viên nào ở nhóm cần can thiệp ngay.
                 </div>
               ) : (
                 overview.studentsNeedingAttention.map((student) => (
                   <div
                     key={student.studentId}
-                    className="rounded-[1.5rem] border border-amber-100 bg-amber-50/60 p-4"
+                    className="rounded-[1.5rem] border border-amber-200/70 bg-amber-50/75 p-4 dark:border-amber-400/20 dark:bg-amber-950/20"
                   >
                     <div className="flex items-start justify-between gap-4">
                       <div>
@@ -172,7 +172,7 @@ export function ClassroomDashboard({ overview, courseName }: ClassroomDashboardP
                           {student.totalChatTurns} lượt hỏi · {student.totalEvaluations} lần đánh giá · {student.totalSessions} phiên
                         </div>
                       </div>
-                      <div className="rounded-full bg-white px-3 py-1 text-xs font-bold text-amber-700">
+                      <div className="rounded-full bg-card px-3 py-1 text-xs font-bold text-amber-700 dark:text-amber-200">
                         {formatPercent(student.averageMasteryScore)}
                       </div>
                     </div>
@@ -188,7 +188,7 @@ export function ClassroomDashboard({ overview, courseName }: ClassroomDashboardP
           </section>
         </div>
 
-        <section className="rounded-[2rem] border border-white/70 bg-white/90 p-6 shadow-sm">
+        <section className="rounded-[2rem] border border-border/70 bg-card/90 p-6 shadow-sm">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <div className="text-sm font-bold">Bảng tiến độ từng sinh viên</div>

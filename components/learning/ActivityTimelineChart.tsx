@@ -15,14 +15,14 @@ export function ActivityTimelineChart({
   description,
 }: ActivityTimelineChartProps) {
   return (
-    <div className="rounded-[2rem] border border-white/70 bg-white/85 p-6 shadow-sm">
+    <div className="rounded-[2rem] border border-border/70 bg-card/90 p-6 shadow-sm">
       <div>
         <div className="text-sm font-bold">{title}</div>
         <div className="mt-1 text-xs text-muted-foreground">{description}</div>
       </div>
 
       {data.length === 0 ? (
-        <div className="mt-5 rounded-[1.5rem] bg-slate-50 px-4 py-8 text-center text-sm text-muted-foreground">
+        <div className="mt-5 rounded-[1.5rem] bg-accent/45 px-4 py-8 text-center text-sm text-muted-foreground">
           Chưa có đủ sự kiện học tập để vẽ timeline.
         </div>
       ) : (
@@ -43,12 +43,13 @@ export function ActivityTimelineChart({
                 tick={{ fill: "var(--muted-foreground)", fontSize: 11 }}
               />
               <Tooltip
-                cursor={{ fill: "rgba(15, 23, 42, 0.04)" }}
+                cursor={{ fill: "rgba(125, 164, 190, 0.08)" }}
                 contentStyle={{
                   backgroundColor: "var(--card)",
                   border: "1px solid var(--border)",
                   borderRadius: "12px",
                   fontSize: 12,
+                  color: "var(--foreground)",
                 }}
               />
               <Bar
@@ -60,7 +61,7 @@ export function ActivityTimelineChart({
               <Bar
                 dataKey="evaluations"
                 name="Lần đánh giá"
-                fill="#14b8a6"
+                fill="var(--chart-3)"
                 radius={[10, 10, 0, 0]}
               />
             </BarChart>

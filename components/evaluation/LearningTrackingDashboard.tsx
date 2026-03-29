@@ -32,7 +32,7 @@ export function LearningTrackingDashboard({ overview }: LearningTrackingDashboar
   ]
 
   return (
-    <div className="rounded-[2rem] border border-white/70 bg-white/85 p-6 shadow-sm">
+    <div className="rounded-[2rem] border border-border/70 bg-card/90 p-6 shadow-sm">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <div className="font-heading text-2xl font-black">Dashboard tracking học tập</div>
@@ -48,7 +48,7 @@ export function LearningTrackingDashboard({ overview }: LearningTrackingDashboar
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {stats.map(({ label, value, Icon }) => (
-          <div key={label} className="rounded-[1.5rem] border border-white/80 bg-slate-50/80 p-4">
+          <div key={label} className="rounded-[1.5rem] border border-border/70 bg-accent/40 p-4">
             <div className="flex items-center gap-2 text-primary">
               <Icon className="h-4 w-4" />
               <div className="text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
@@ -61,11 +61,11 @@ export function LearningTrackingDashboard({ overview }: LearningTrackingDashboar
       </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-3">
-        <div className="rounded-[1.5rem] border border-rose-100 bg-rose-50/70 p-5">
-          <div className="text-sm font-bold text-rose-700">Concept cần tập trung</div>
+        <div className="rounded-[1.5rem] border border-rose-200/70 bg-rose-50/80 p-5 dark:border-rose-400/20 dark:bg-rose-950/20">
+          <div className="text-sm font-bold text-rose-700 dark:text-rose-200">Concept cần tập trung</div>
           <div className="mt-3 space-y-3">
             {overview.focusConcepts.length === 0 ? (
-              <div className="text-sm text-rose-700/80">Chưa có concept nào ở mức cần tập trung cao.</div>
+              <div className="text-sm text-rose-700/80 dark:text-rose-200/75">Chưa có concept nào ở mức cần tập trung cao.</div>
             ) : (
               overview.focusConcepts.map((concept) => (
                 <div key={concept.conceptName}>
@@ -73,8 +73,8 @@ export function LearningTrackingDashboard({ overview }: LearningTrackingDashboar
                     <span>{concept.conceptName}</span>
                     <span className="font-semibold">{formatMastery(concept.masteryScore)}</span>
                   </div>
-                  <div className="mt-1 h-2 rounded-full bg-rose-100">
-                    <div className="h-full rounded-full bg-rose-500" style={{ width: `${concept.masteryScore * 100}%` }} />
+                  <div className="mt-1 h-2 rounded-full bg-rose-100 dark:bg-rose-400/15">
+                    <div className="h-full rounded-full bg-rose-500 dark:bg-rose-300" style={{ width: `${concept.masteryScore * 100}%` }} />
                   </div>
                 </div>
               ))
@@ -82,11 +82,11 @@ export function LearningTrackingDashboard({ overview }: LearningTrackingDashboar
           </div>
         </div>
 
-        <div className="rounded-[1.5rem] border border-amber-100 bg-amber-50/70 p-5">
-          <div className="text-sm font-bold text-amber-700">Concept đang cải thiện</div>
+        <div className="rounded-[1.5rem] border border-amber-200/70 bg-amber-50/80 p-5 dark:border-amber-400/20 dark:bg-amber-950/20">
+          <div className="text-sm font-bold text-amber-700 dark:text-amber-200">Concept đang cải thiện</div>
           <div className="mt-3 space-y-3">
             {overview.improvingConcepts.length === 0 ? (
-              <div className="text-sm text-amber-700/80">Chưa có concept nào ở vùng trung gian.</div>
+              <div className="text-sm text-amber-700/80 dark:text-amber-200/75">Chưa có concept nào ở vùng trung gian.</div>
             ) : (
               overview.improvingConcepts.map((concept) => (
                 <div key={concept.conceptName}>
@@ -94,8 +94,8 @@ export function LearningTrackingDashboard({ overview }: LearningTrackingDashboar
                     <span>{concept.conceptName}</span>
                     <span className="font-semibold">{formatMastery(concept.masteryScore)}</span>
                   </div>
-                  <div className="mt-1 h-2 rounded-full bg-amber-100">
-                    <div className="h-full rounded-full bg-amber-500" style={{ width: `${concept.masteryScore * 100}%` }} />
+                  <div className="mt-1 h-2 rounded-full bg-amber-100 dark:bg-amber-400/15">
+                    <div className="h-full rounded-full bg-amber-500 dark:bg-amber-300" style={{ width: `${concept.masteryScore * 100}%` }} />
                   </div>
                 </div>
               ))
@@ -103,11 +103,11 @@ export function LearningTrackingDashboard({ overview }: LearningTrackingDashboar
           </div>
         </div>
 
-        <div className="rounded-[1.5rem] border border-emerald-100 bg-emerald-50/70 p-5">
-          <div className="text-sm font-bold text-emerald-700">Concept đã nắm tốt</div>
+        <div className="rounded-[1.5rem] border border-emerald-200/70 bg-emerald-50/80 p-5 dark:border-emerald-400/20 dark:bg-emerald-950/20">
+          <div className="text-sm font-bold text-emerald-700 dark:text-emerald-200">Concept đã nắm tốt</div>
           <div className="mt-3 space-y-3">
             {overview.masteredConcepts.length === 0 ? (
-              <div className="text-sm text-emerald-700/80">Chưa có concept nào đạt vùng nắm vững.</div>
+              <div className="text-sm text-emerald-700/80 dark:text-emerald-200/75">Chưa có concept nào đạt vùng nắm vững.</div>
             ) : (
               overview.masteredConcepts.map((concept) => (
                 <div key={concept.conceptName}>
@@ -115,8 +115,8 @@ export function LearningTrackingDashboard({ overview }: LearningTrackingDashboar
                     <span>{concept.conceptName}</span>
                     <span className="font-semibold">{formatMastery(concept.masteryScore)}</span>
                   </div>
-                  <div className="mt-1 h-2 rounded-full bg-emerald-100">
-                    <div className="h-full rounded-full bg-emerald-500" style={{ width: `${concept.masteryScore * 100}%` }} />
+                  <div className="mt-1 h-2 rounded-full bg-emerald-100 dark:bg-emerald-400/15">
+                    <div className="h-full rounded-full bg-emerald-500 dark:bg-emerald-300" style={{ width: `${concept.masteryScore * 100}%` }} />
                   </div>
                 </div>
               ))

@@ -1,11 +1,12 @@
 "use client"
 
+import Link from "next/link"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { Chat, useChat } from "@ai-sdk/react"
 import { DefaultChatTransport } from "ai"
 import { motion, AnimatePresence } from "framer-motion"
 import { Send, PanelLeft, GraduationCap, AlertCircle, MessageCircleQuestion, History, MoreVertical, Lightbulb } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { Button, buttonVariants } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { ThinkingIndicator } from "./ThinkingIndicator"
 import { MessageBubble } from "./MessageBubble"
@@ -111,7 +112,7 @@ export function ChatInterface({
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#f7f9fb]">
+    <div id="main-content" className="flex h-screen overflow-hidden bg-background">
       <Sidebar
         courseId={courseId}
         courseName={courseName}
@@ -126,7 +127,7 @@ export function ChatInterface({
       />
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="glass-panel flex shrink-0 items-center justify-between border-b border-white/60 px-4 py-4 shadow-sm sm:px-8">
+        <header className="glass-panel flex shrink-0 items-center justify-between border-b border-border/60 px-4 py-4 shadow-sm sm:px-8">
           <div className="flex items-center gap-2">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
               <GraduationCap className="h-5 w-5" />
@@ -141,10 +142,20 @@ export function ChatInterface({
           </div>
           <div className="flex items-center gap-1.5">
             <ThemeToggle />
-            <Button variant="ghost" size="icon" className="hidden h-9 w-9 text-muted-foreground xl:inline-flex">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="hidden h-9 w-9 text-muted-foreground xl:inline-flex"
+              aria-label="Lịch sử phiên học"
+            >
               <History className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="icon" className="hidden h-9 w-9 text-muted-foreground xl:inline-flex">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="hidden h-9 w-9 text-muted-foreground xl:inline-flex"
+              aria-label="Tùy chọn phiên học"
+            >
               <MoreVertical className="h-4 w-4" />
             </Button>
             <Button
@@ -183,7 +194,7 @@ export function ChatInterface({
                   <button
                     key={q}
                     onClick={() => setInput(q)}
-                    className="rounded-full border border-primary/10 bg-white px-4 py-2 text-xs font-semibold text-primary shadow-sm transition-colors hover:bg-primary hover:text-white"
+                    className="rounded-full border border-primary/10 bg-card px-4 py-2 text-xs font-semibold text-primary shadow-sm transition-colors hover:bg-primary hover:text-primary-foreground"
                   >
                     {q}
                   </button>
@@ -208,19 +219,23 @@ export function ChatInterface({
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 10 }}
-                className="mx-4 mb-3 flex items-center justify-between gap-3 rounded-[1.5rem] bg-gradient-to-r from-primary to-[#0066ff] p-4 text-white shadow-lg shadow-primary/20 sm:mx-8"
+                className="mx-4 mb-3 flex items-center justify-between gap-3 rounded-[1.5rem] bg-gradient-to-r from-primary to-secondary p-4 text-white shadow-lg shadow-primary/20 sm:mx-8"
               >
                 <div className="text-sm">
                   <span className="font-semibold">Đã đặt 4 câu hỏi!</span>
-                  <span className="ml-1 text-blue-50/80">
+                  <span className="ml-1 text-white/82">
                     Xem đánh giá năng lực của bạn →
                   </span>
                 </div>
-                <a href="/evaluation">
-                  <Button size="sm" className="shrink-0 bg-white text-primary hover:bg-blue-50">
-                    Xem ngay
-                  </Button>
-                </a>
+                <Link
+                  href="/evaluation"
+                  className={buttonVariants({
+                    size: "sm",
+                    className: "shrink-0 bg-card text-primary hover:bg-accent",
+                  })}
+                >
+                  Xem ngay
+                </Link>
               </motion.div>
             )}
           </AnimatePresence>
@@ -234,20 +249,25 @@ export function ChatInterface({
         )}
 
         {isReadOnly ? (
-          <div className="shrink-0 border-t border-white/60 px-4 pb-4 pt-3 sm:px-8">
-            <div className="flex items-center justify-between gap-3 rounded-[1.4rem] border border-white/70 bg-white/80 p-4">
+          <div className="shrink-0 border-t border-border/60 px-4 pb-4 pt-3 sm:px-8">
+            <div className="flex items-center justify-between gap-3 rounded-[1.4rem] border border-border/70 bg-card/80 p-4">
               <div className="text-xs text-muted-foreground">
                 Đây là phiên chat cũ — chỉ xem, không thể gửi thêm tin nhắn.
               </div>
-              <a href="/portal">
-                <Button size="sm" variant="outline" className="h-8 shrink-0 rounded-full text-xs">
-                  Phiên mới
-                </Button>
-              </a>
+              <Link
+                href="/portal"
+                className={buttonVariants({
+                  size: "sm",
+                  variant: "outline",
+                  className: "h-8 shrink-0 rounded-full text-xs",
+                })}
+              >
+                Phiên mới
+              </Link>
             </div>
           </div>
         ) : (
-          <div className="glass-panel shrink-0 border-t border-white/60 px-4 pb-5 pt-4 sm:px-8">
+          <div className="glass-panel shrink-0 border-t border-border/60 px-4 pb-5 pt-4 sm:px-8">
             <div className="mb-3 flex flex-wrap justify-center gap-2 xl:hidden">
               {[
                 "Làm bài tập trắc nghiệm",
@@ -257,7 +277,7 @@ export function ChatInterface({
                 <button
                   key={label}
                   onClick={() => setInput(label)}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-primary/10 bg-white px-4 py-2 text-xs font-semibold text-primary shadow-sm transition-colors hover:bg-primary hover:text-white"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-primary/10 bg-card px-4 py-2 text-xs font-semibold text-primary shadow-sm transition-colors hover:bg-primary hover:text-primary-foreground"
                 >
                   <Lightbulb className="h-3 w-3" />
                   {label}
@@ -265,12 +285,17 @@ export function ChatInterface({
               ))}
             </div>
 
-            <form onSubmit={handleSubmit} className="mx-auto flex max-w-4xl items-end gap-3 rounded-[1.75rem] border border-white/70 bg-[#eef2f6] p-2 shadow-inner">
+            <form onSubmit={handleSubmit} className="mx-auto flex max-w-4xl items-end gap-3 rounded-[1.75rem] border border-border/70 bg-accent/70 p-2 shadow-inner">
+              <label htmlFor="chat-input" className="sr-only">
+                Câu hỏi gửi cho trợ lý học tập
+              </label>
               <Textarea
+                id="chat-input"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Hỏi bất kỳ điều gì về tài liệu..."
+                aria-label="Nhập câu hỏi về tài liệu môn học"
+                placeholder="Hỏi bất kỳ điều gì về tài liệu…"
                 className="min-h-[52px] max-h-32 resize-none border-0 bg-transparent px-3 py-3 text-sm shadow-none focus-visible:ring-0"
                 disabled={isStreaming}
                 rows={1}
@@ -279,6 +304,7 @@ export function ChatInterface({
                 type="submit"
                 size="icon"
                 disabled={!canSend}
+                aria-label="Gửi câu hỏi"
                 className="h-11 w-11 shrink-0 rounded-2xl shadow-lg shadow-primary/25"
               >
                 <Send className="h-4 w-4" />
@@ -294,8 +320,8 @@ export function ChatInterface({
                   const lastUserPart = messages.filter(m => m.role === "user").at(-1)
                     ?.parts.find((p: { type: string }) => p.type === "text") as { type: "text"; text: string } | undefined
                   const question = input.trim() || lastUserPart?.text || "câu hỏi của bạn"
-                  const toastId = toast.loading("Đang gửi đến giảng viên...", {
-                    description: question.length > 60 ? question.slice(0, 60) + "..." : question,
+                  const toastId = toast.loading("Đang gửi đến giảng viên…", {
+                    description: question.length > 60 ? question.slice(0, 60) + "…" : question,
                   })
                   setTimeout(() => {
                     toast.success("Đã gửi!", {

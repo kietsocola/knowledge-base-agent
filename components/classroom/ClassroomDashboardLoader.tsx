@@ -1,9 +1,10 @@
 "use client"
 
+import Link from "next/link"
 import { useEffect, useState } from "react"
 import { AlertCircle, BarChart3 } from "lucide-react"
 import { ClassroomDashboard } from "@/components/classroom/ClassroomDashboard"
-import { Button } from "@/components/ui/button"
+import { Button, buttonVariants } from "@/components/ui/button"
 import type { ClassroomOverview } from "@/types/learning"
 
 interface ClassroomDashboardLoaderProps {
@@ -46,9 +47,9 @@ export function ClassroomDashboardLoader({
           <div className="mt-1 max-w-md text-sm text-muted-foreground">{error}</div>
         </div>
         <div className="flex gap-3">
-          <a href="/portal">
-            <Button variant="outline">Quay lại portal</Button>
-          </a>
+          <Link href="/portal" className={buttonVariants({ variant: "outline" })}>
+            Quay lại portal
+          </Link>
           <Button onClick={() => window.location.reload()}>Thử lại</Button>
         </div>
       </div>
@@ -58,8 +59,8 @@ export function ClassroomDashboardLoader({
   if (!overview) {
     return (
       <div className="flex min-h-screen items-center justify-center px-4">
-        <div className="w-full max-w-xl rounded-[2rem] border border-white/70 bg-white/85 p-8 text-center shadow-[0_30px_90px_rgba(0,80,203,0.12)]">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-primary text-white shadow-lg shadow-primary/20">
+        <div className="w-full max-w-xl rounded-[2rem] border border-border/70 bg-card/90 p-8 text-center shadow-[0_30px_90px_rgba(25,69,99,0.12)]">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-primary text-primary-foreground shadow-lg shadow-primary/20">
             <BarChart3 className="h-8 w-8 animate-pulse" />
           </div>
           <div className="mt-6 font-heading text-2xl font-black">Đang tổng hợp dữ liệu lớp học</div>

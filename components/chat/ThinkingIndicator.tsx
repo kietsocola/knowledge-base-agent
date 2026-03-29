@@ -5,10 +5,10 @@ import { motion, AnimatePresence } from "framer-motion"
 import { Brain, Search, FileText, Pen } from "lucide-react"
 
 const STEPS = [
-  { icon: Brain, text: "Đang phân tích câu hỏi..." },
-  { icon: Search, text: "Tìm kiếm trong tài liệu môn học..." },
-  { icon: FileText, text: "Đọc các đoạn liên quan..." },
-  { icon: Pen, text: "Đang soạn câu trả lời..." },
+  { icon: Brain, text: "Đang phân tích câu hỏi…" },
+  { icon: Search, text: "Tìm kiếm trong tài liệu môn học…" },
+  { icon: FileText, text: "Đọc các đoạn liên quan…" },
+  { icon: Pen, text: "Đang soạn câu trả lời…" },
 ]
 
 interface ThinkingIndicatorProps {
@@ -42,11 +42,11 @@ export function ThinkingIndicator({ isVisible }: ThinkingIndicatorProps) {
           transition={{ duration: 0.2 }}
           className="flex items-start gap-4 px-4 py-2 sm:px-8"
         >
-          <div className="mt-1 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl bg-primary text-white shadow-sm shadow-primary/20">
+          <div className="mt-1 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-sm shadow-primary/20">
             <span className="text-[11px] font-bold">AI</span>
           </div>
 
-          <div className="max-w-sm rounded-[1.6rem] rounded-tl-md border border-white/80 bg-white/90 px-5 py-4 shadow-sm">
+          <div className="max-w-sm rounded-[1.6rem] rounded-tl-md border border-border/70 bg-card/90 px-5 py-4 shadow-sm">
             <AnimatePresence mode="wait">
               <motion.div
                 key={stepIndex}

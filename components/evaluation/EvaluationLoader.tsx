@@ -1,9 +1,10 @@
 "use client"
 
+import Link from "next/link"
 import { useEffect, useState } from "react"
 import { motion } from "framer-motion"
 import { BarChart3, Loader2, AlertCircle } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { Button, buttonVariants } from "@/components/ui/button"
 import { EvaluationCard } from "./EvaluationCard"
 import type { EvaluationResult } from "@/types/evaluation"
 import type { LearningOverview } from "@/types/learning"
@@ -28,10 +29,10 @@ export function EvaluationLoader({
   const [step, setStep] = useState(0)
 
   const LOADING_STEPS = [
-    "Đang phân tích hội thoại...",
-    "Đánh giá năng lực nhận thức...",
-    "Tính toán điểm số...",
-    "Tạo báo cáo chi tiết...",
+    "Đang phân tích hội thoại…",
+    "Đánh giá năng lực nhận thức…",
+    "Tính toán điểm số…",
+    "Tạo báo cáo chi tiết…",
   ]
 
   useEffect(() => {
@@ -83,12 +84,12 @@ export function EvaluationLoader({
 
   if (loading) {
     return (
-      <div className="soft-grid flex min-h-screen items-center justify-center px-4 py-12">
-        <div className="w-full max-w-xl rounded-[2rem] border border-white/70 bg-white/85 p-8 text-center shadow-[0_30px_90px_rgba(0,80,203,0.12)]">
+      <div id="main-content" className="soft-grid flex min-h-screen items-center justify-center px-4 py-12">
+        <div className="w-full max-w-xl rounded-[2rem] border border-border/70 bg-card/90 p-8 text-center shadow-[0_30px_90px_rgba(25,69,99,0.12)]">
           <motion.div
             animate={{ rotate: 360 }}
             transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-            className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-primary text-white shadow-lg shadow-primary/20"
+            className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-primary text-primary-foreground shadow-lg shadow-primary/20"
           >
             <BarChart3 className="h-8 w-8" />
           </motion.div>
@@ -123,16 +124,19 @@ export function EvaluationLoader({
 
   if (error) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-4 px-4">
+      <div id="main-content" className="flex min-h-screen flex-col items-center justify-center gap-4 px-4">
         <AlertCircle className="h-10 w-10 text-destructive" />
         <div className="space-y-1 text-center">
           <div className="font-semibold">Không thể tạo đánh giá</div>
           <div className="max-w-sm text-sm text-muted-foreground">{error}</div>
         </div>
         <div className="flex gap-3">
-          <a href={`/chat/${sessionId}`}>
-            <Button variant="outline">← Quay lại chat</Button>
-          </a>
+          <Link
+            href={`/chat/${sessionId}`}
+            className={buttonVariants({ variant: "outline" })}
+          >
+            ← Quay lại chat
+          </Link>
           <Button onClick={() => window.location.reload()}>Thử lại</Button>
         </div>
       </div>
