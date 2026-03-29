@@ -18,6 +18,16 @@ export interface LearningTimelinePoint {
   evaluations: number
 }
 
+export type InterventionSeverity = "high" | "medium" | "low"
+
+export interface InterventionAlert {
+  id: string
+  severity: InterventionSeverity
+  title: string
+  summary: string
+  recommendedAction: string
+}
+
 export interface LearningOverview {
   totalConcepts: number
   totalLearningEvents: number
@@ -25,6 +35,7 @@ export interface LearningOverview {
   totalEvaluations: number
   latestActivityAt: number | null
   activityTimeline: LearningTimelinePoint[]
+  interventionAlerts: InterventionAlert[]
   focusConcepts: LearningConceptSnapshot[]
   improvingConcepts: LearningConceptSnapshot[]
   masteredConcepts: LearningConceptSnapshot[]
@@ -57,6 +68,7 @@ export interface ClassroomOverview {
   totalEvaluations: number
   latestActivityAt: number | null
   activityTimeline: LearningTimelinePoint[]
+  interventionAlerts: InterventionAlert[]
   strugglingConcepts: ClassroomConceptInsight[]
   strongestConcepts: ClassroomConceptInsight[]
   studentsNeedingAttention: ClassroomStudentSnapshot[]

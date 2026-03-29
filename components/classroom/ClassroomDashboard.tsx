@@ -2,6 +2,7 @@
 
 import { Activity, AlertTriangle, BookOpen, CalendarClock, GraduationCap, TrendingUp } from "lucide-react"
 import { ActivityTimelineChart } from "@/components/learning/ActivityTimelineChart"
+import { InterventionAlertsPanel } from "@/components/learning/InterventionAlertsPanel"
 import type { ClassroomOverview } from "@/types/learning"
 
 interface ClassroomDashboardProps {
@@ -66,6 +67,12 @@ export function ClassroomDashboard({ overview, courseName }: ClassroomDashboardP
             </div>
           ))}
         </div>
+
+        <InterventionAlertsPanel
+          alerts={overview.interventionAlerts}
+          title="Cảnh báo sớm ở cấp lớp"
+          description="Ưu tiên các tín hiệu cần can thiệp sớm để giảng viên biết nên hỗ trợ ở mức cá nhân hay theo nhóm."
+        />
 
         <div className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
           <div className="space-y-6">

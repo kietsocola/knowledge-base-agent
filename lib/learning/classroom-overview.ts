@@ -3,6 +3,7 @@ import type {
   ClassroomOverview,
   ClassroomStudentSnapshot,
 } from "@/types/learning"
+import { buildClassroomInterventionAlerts } from "@/lib/learning/interventions"
 import { buildActivityTimeline } from "@/lib/learning/timeline"
 
 interface ClassroomSessionSnapshot {
@@ -167,7 +168,7 @@ export function buildClassroomOverview({
     ? Math.max(...studentSnapshots.map((student) => student.latestActivityAt ?? 0))
     : null
 
-  return {
+  const overview: ClassroomOverview = {
     totalStudents: studentSnapshots.length,
     activeStudents: studentSnapshots.filter((student) => student.totalChatTurns > 0 || student.totalEvaluations > 0).length,
     totalSessions: sessions.length,
@@ -175,6 +176,7 @@ export function buildClassroomOverview({
     totalEvaluations: events.filter((event) => event.eventType === "evaluation_generated").length,
     latestActivityAt: latestActivityAt && latestActivityAt > 0 ? latestActivityAt : null,
     activityTimeline: buildActivityTimeline(events),
+    interventionAlerts: [],
     strugglingConcepts: [...conceptInsights]
       .sort((a, b) => a.averageMasteryScore - b.averageMasteryScore || b.studentCount - a.studentCount)
       .slice(0, 5),
@@ -184,4 +186,8 @@ export function buildClassroomOverview({
     studentsNeedingAttention: studentSnapshots.filter((student) => student.needsAttention).slice(0, 6),
     studentSnapshots,
   }
+
+  overview.interventionAlerts = buildClassroomInterventionAlerts(overview)
+
+  return overview
 }

@@ -2,6 +2,7 @@
 
 import { Activity, BarChart3, BookMarked, BrainCircuit, Clock3 } from "lucide-react"
 import { ActivityTimelineChart } from "@/components/learning/ActivityTimelineChart"
+import { InterventionAlertsPanel } from "@/components/learning/InterventionAlertsPanel"
 import type { LearningOverview } from "@/types/learning"
 
 interface LearningTrackingDashboardProps {
@@ -129,6 +130,14 @@ export function LearningTrackingDashboard({ overview }: LearningTrackingDashboar
           data={overview.activityTimeline}
           title="Timeline học tập gần đây"
           description="Theo dõi số lượt hỏi đáp và số lần đánh giá theo từng ngày hoạt động."
+        />
+      </div>
+
+      <div className="mt-6">
+        <InterventionAlertsPanel
+          alerts={overview.interventionAlerts}
+          title="Cảnh báo sớm và phương án can thiệp"
+          description="Các tín hiệu cần chú ý được suy ra từ nhịp học gần đây, concept yếu và checkpoint đánh giá."
         />
       </div>
     </div>

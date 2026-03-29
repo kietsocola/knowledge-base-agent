@@ -11,6 +11,7 @@ function makeOverview(overrides: Partial<LearningOverview> = {}): LearningOvervi
     totalEvaluations: 1,
     latestActivityAt: 123456,
     activityTimeline: [],
+    interventionAlerts: [],
     focusConcepts: [
       { conceptName: "Cây AVL", masteryScore: 0.25, confidenceScore: 0.8, updatedAt: 120 },
     ],
