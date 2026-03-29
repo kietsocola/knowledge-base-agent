@@ -1,13 +1,15 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { BookOpen, FileText, BarChart3, X, History, MessageSquare, BarChart2, UploadCloud, FileStack } from "lucide-react"
+import { BookOpen, FileText, BarChart3, X, History, MessageSquare, BarChart2, UploadCloud, FileStack, BrainCircuit, Activity } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
 import { UploadModal } from "@/components/chat/UploadModal"
 import type { SessionSummary } from "@/components/chat/ChatInterface"
+import type { LearningOverview } from "@/types/learning"
+import { buildSidebarLearningSummary } from "@/lib/learning/sidebar-summary"
 
 interface Document {
   id: string
@@ -50,6 +52,8 @@ export function Sidebar({
   const [loadingDocs, setLoadingDocs] = useState(true)
   const [docsVersion, setDocsVersion] = useState(0)
   const [showUpload, setShowUpload] = useState(false)
+  const [overview, setOverview] = useState<LearningOverview | null>(null)
+  const [loadingOverview, setLoadingOverview] = useState(true)
 
   useEffect(() => {
     if (!courseId) return
@@ -64,10 +68,23 @@ export function Sidebar({
       .catch(() => setLoadingDocs(false))
   }, [courseId, docsVersion])
 
+  useEffect(() => {
+    if (!sessionId) return
+    setLoadingOverview(true)
+    fetch(`/api/learning/overview?sessionId=${sessionId}`)
+      .then((r) => r.json())
+      .then((data: LearningOverview) => {
+        setOverview(data)
+        setLoadingOverview(false)
+      })
+      .catch(() => setLoadingOverview(false))
+  }, [sessionId, messageCount])
+
   const EVAL_THRESHOLD = 4
   const evalUnlocked = messageCount >= EVAL_THRESHOLD
   const evalProgress = Math.min(messageCount, EVAL_THRESHOLD)
   const nextEvalAt = EVAL_THRESHOLD - evalProgress
+  const learningSummary = overview ? buildSidebarLearningSummary(overview) : null
 
   return (
     <>
@@ -207,6 +224,73 @@ export function Sidebar({
                   </li>
                 ))}
               </ul>
+            )}
+          </div>
+
+          <div>
+            <div className="mb-2 flex items-center gap-2">
+              <BrainCircuit className="h-4 w-4 text-primary" />
+              <span className="text-[11px] font-bold uppercase tracking-[0.22em] text-muted-foreground">
+                Tracking học tập
+              </span>
+            </div>
+
+            {loadingOverview ? (
+              <div className="space-y-2">
+                <Skeleton className="h-16 w-full rounded-2xl" />
+                <Skeleton className="h-24 w-full rounded-2xl" />
+              </div>
+            ) : !overview ? (
+              <div className="rounded-2xl bg-white/80 px-4 py-3 text-xs italic text-muted-foreground shadow-sm">
+                Chưa tải được dữ liệu tracking.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="rounded-[1.25rem] border border-white/80 bg-white/90 p-3 shadow-sm">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <BookOpen className="h-3.5 w-3.5" />
+                      <span className="text-[10px] font-bold uppercase tracking-[0.18em]">Concept</span>
+                    </div>
+                    <div className="mt-2 text-2xl font-black text-primary">{overview.totalConcepts}</div>
+                  </div>
+                  <div className="rounded-[1.25rem] border border-white/80 bg-white/90 p-3 shadow-sm">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Activity className="h-3.5 w-3.5" />
+                      <span className="text-[10px] font-bold uppercase tracking-[0.18em]">Sự kiện</span>
+                    </div>
+                    <div className="mt-2 text-2xl font-black text-primary">{overview.totalLearningEvents}</div>
+                  </div>
+                </div>
+
+                <div className="rounded-[1.5rem] border border-white/80 bg-white/90 p-4 shadow-sm">
+                  <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+                    {learningSummary?.primaryLabel ?? "Theo dõi"}
+                  </div>
+                  <div className="mt-2 text-sm font-semibold leading-snug">
+                    {learningSummary?.primaryConcept ?? "Bắt đầu học để tạo dữ liệu tracking"}
+                  </div>
+                  <div className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
+                    {learningSummary?.secondaryLabel ?? "Hệ thống sẽ cập nhật tiến trình ngay trong lúc học."}
+                  </div>
+                </div>
+
+                <div className="rounded-[1.5rem] bg-slate-900 px-4 py-4 text-white shadow-sm">
+                  <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/60">
+                    Phiên hiện tại
+                  </div>
+                  <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <div className="text-xl font-black">{overview.totalChatTurns}</div>
+                      <div className="text-[11px] text-white/60">lượt hỏi đáp</div>
+                    </div>
+                    <div>
+                      <div className="text-xl font-black">{overview.totalEvaluations}</div>
+                      <div className="text-[11px] text-white/60">lần đánh giá</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             )}
           </div>
 
