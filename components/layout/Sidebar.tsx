@@ -290,6 +290,14 @@ export function Sidebar({
                     </div>
                   </div>
                 </div>
+
+                <a
+                  href="/classroom"
+                  className="flex items-center justify-between rounded-[1.25rem] border border-primary/10 bg-primary/5 px-4 py-3 text-sm font-semibold text-primary transition-colors hover:bg-primary hover:text-white"
+                >
+                  <span>Xem dashboard lớp học</span>
+                  <BarChart3 className="h-4 w-4" />
+                </a>
               </div>
             )}
           </div>

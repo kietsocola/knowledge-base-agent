@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { motion } from "framer-motion"
-import { CheckCircle2, AlertCircle, BookOpen, ArrowRight, MessageSquare } from "lucide-react"
+import { CheckCircle2, AlertCircle, BookOpen, ArrowRight, MessageSquare, GraduationCap } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -255,6 +255,12 @@ export function EvaluationCard({
             <Button variant="outline" className="gap-2 rounded-full bg-white px-6">
               <MessageSquare className="w-4 h-4" />
               Tiếp tục hỏi đáp
+            </Button>
+          </a>
+          <a href="/classroom">
+            <Button variant="outline" className="gap-2 rounded-full bg-white px-6">
+              <GraduationCap className="w-4 h-4" />
+              Xem dashboard lớp học
             </Button>
           </a>
           <a href="/portal">
