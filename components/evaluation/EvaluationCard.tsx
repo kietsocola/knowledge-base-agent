@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useEffect, useState } from "react"
-import { motion } from "framer-motion"
+import { motion, useReducedMotion } from "framer-motion"
 import { CheckCircle2, AlertCircle, BookOpen, ArrowRight, MessageSquare, GraduationCap } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -52,8 +52,11 @@ export function EvaluationCard({
   courseName,
   viewerRole,
 }: EvaluationCardProps) {
+  const shouldReduceMotion = useReducedMotion()
   const supportPlan = buildSupportPlan(result)
   const studyPlan = buildStudyPlan(result, overview)
+  const transition = (delay = 0) =>
+    shouldReduceMotion ? { duration: 0 } : { delay, duration: 0.3, ease: "easeOut" as const }
   const supportTone = {
     high: {
       badge: "bg-rose-100 text-rose-700 dark:bg-rose-400/15 dark:text-rose-200",
@@ -76,18 +79,19 @@ export function EvaluationCard({
     <div id="main-content" className="min-h-screen px-4 pb-12 pt-8 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-6xl space-y-8">
         <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between"
+          initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: -10 }}
+          animate={shouldReduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
+          transition={transition()}
+          className="paper-surface flex flex-col gap-5 rounded-[2.4rem] px-6 py-6 lg:flex-row lg:items-end lg:justify-between"
         >
           <div>
-            <div className="text-[11px] font-bold uppercase tracking-[0.28em] text-muted-foreground">
+            <div className="section-label">
               Kết quả học tập
             </div>
-            <h1 className="mt-2 font-heading text-4xl font-black tracking-tight">
+            <h1 className="mt-4 font-heading text-4xl font-black tracking-tight">
               Báo cáo đánh giá
             </h1>
-            <div className="mt-2 text-sm text-muted-foreground">
+            <div className="mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground">
               {studentName} · {courseName}
             </div>
           </div>
@@ -97,40 +101,40 @@ export function EvaluationCard({
         </motion.div>
 
         <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.1 }}
-          className="overflow-hidden rounded-[2rem] bg-gradient-to-br from-primary to-secondary p-8 text-white shadow-[0_24px_70px_rgba(25,69,99,0.24)]"
+          initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, scale: 0.96 }}
+          animate={shouldReduceMotion ? { opacity: 1 } : { opacity: 1, scale: 1 }}
+          transition={transition(0.1)}
+          className="ink-panel overflow-hidden rounded-[2.6rem] p-8"
         >
-          <div className="grid gap-8 lg:grid-cols-[0.72fr_0.28fr] lg:items-center">
+          <div className="grid gap-8 lg:grid-cols-[0.76fr_0.24fr] lg:items-center">
             <div className="flex items-start gap-5">
-              <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-3xl bg-white/20">
+              <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-3xl bg-white/12">
                 <BookOpen className="h-8 w-8" />
               </div>
               <div>
-                <div className="text-sm font-semibold text-blue-50/80">Gợi ý từ AI</div>
-                <div className="mt-2 max-w-3xl text-lg font-medium leading-relaxed text-blue-50">
+                <div className="section-label text-white/60 before:bg-white/20">AI brief</div>
+                <div className="mt-3 max-w-3xl text-lg font-medium leading-relaxed text-white/86">
                   "{result.nextStepMessage}"
                 </div>
               </div>
             </div>
-            <div className="rounded-[1.75rem] bg-white/12 p-6 backdrop-blur-sm">
-              <div className="text-xs font-semibold uppercase tracking-[0.22em] text-white/60">
+            <div className="rounded-[1.75rem] border border-white/10 bg-white/8 p-6 backdrop-blur-sm">
+              <div className="text-xs font-semibold uppercase tracking-[0.22em] text-white/55">
                 Điểm tổng thể
               </div>
               <div className="mt-3 text-6xl font-black tabular-nums">
                 <CountUpScore target={result.overallScore} />
               </div>
-              <div className="mt-1 text-xs text-white/70">/ 10 đánh giá tổng quan</div>
+              <div className="mt-1 text-xs text-white/72">/ 10 đánh giá tổng quan</div>
             </div>
           </div>
         </motion.div>
 
         <div className="grid gap-6 lg:grid-cols-12">
           <motion.div
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.2 }}
+            initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, x: -10 }}
+            animate={shouldReduceMotion ? { opacity: 1 } : { opacity: 1, x: 0 }}
+            transition={transition(0.2)}
             className="lg:col-span-8 rounded-[2rem] border border-border/70 bg-card/90 p-6 shadow-sm"
           >
             <div className="mb-6 flex items-center justify-between gap-4">
@@ -148,9 +152,9 @@ export function EvaluationCard({
           </motion.div>
 
           <motion.div
-            initial={{ opacity: 0, x: 10 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.25 }}
+            initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, x: 10 }}
+            animate={shouldReduceMotion ? { opacity: 1 } : { opacity: 1, x: 0 }}
+            transition={transition(0.25)}
             className="lg:col-span-4 space-y-4"
           >
             <div className="rounded-[1.75rem] border border-border/70 bg-card/90 p-6 shadow-sm">
@@ -187,9 +191,9 @@ export function EvaluationCard({
 
         {result.recommendedTopics.length > 0 && (
           <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
+            initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: 10 }}
+            animate={shouldReduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
+            transition={transition(0.3)}
             className="rounded-[2rem] border border-border/70 bg-card/90 p-6 shadow-sm"
           >
             <div className="mb-4 flex items-center gap-2">
@@ -208,26 +212,26 @@ export function EvaluationCard({
 
         <div className="grid gap-6 xl:grid-cols-[1.08fr_0.92fr]">
           <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.33 }}
+            initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: 10 }}
+            animate={shouldReduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
+            transition={transition(0.33)}
           >
             <LearningTrackingDashboard overview={overview} />
           </motion.div>
 
           <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.34 }}
+            initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: 10 }}
+            animate={shouldReduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
+            transition={transition(0.34)}
           >
             <StudyPlanPanel plan={studyPlan} />
           </motion.div>
         </div>
 
         <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.35 }}
+          initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: 10 }}
+          animate={shouldReduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
+          transition={transition(0.35)}
           className={`rounded-[2rem] border ${supportTone.border} bg-card/90 p-6 shadow-sm`}
         >
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -262,9 +266,9 @@ export function EvaluationCard({
         </motion.div>
 
         <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
+          initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: 10 }}
+          animate={shouldReduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
+          transition={transition(0.4)}
           className="flex flex-wrap justify-center gap-3"
         >
           <Link

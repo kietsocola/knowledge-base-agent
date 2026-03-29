@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { motion, AnimatePresence } from "framer-motion"
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion"
 import { Brain, Search, FileText, Pen } from "lucide-react"
 
 const STEPS = [
@@ -17,9 +17,14 @@ interface ThinkingIndicatorProps {
 
 export function ThinkingIndicator({ isVisible }: ThinkingIndicatorProps) {
   const [stepIndex, setStepIndex] = useState(0)
+  const shouldReduceMotion = useReducedMotion()
 
   useEffect(() => {
     if (!isVisible) {
+      setStepIndex(0)
+      return
+    }
+    if (shouldReduceMotion) {
       setStepIndex(0)
       return
     }
@@ -27,7 +32,7 @@ export function ThinkingIndicator({ isVisible }: ThinkingIndicatorProps) {
       setStepIndex((i) => (i < STEPS.length - 1 ? i + 1 : i))
     }, 900)
     return () => clearInterval(interval)
-  }, [isVisible])
+  }, [isVisible, shouldReduceMotion])
 
   const step = STEPS[stepIndex]
   const Icon = step.icon
@@ -36,10 +41,10 @@ export function ThinkingIndicator({ isVisible }: ThinkingIndicatorProps) {
     <AnimatePresence>
       {isVisible && (
         <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -8 }}
-          transition={{ duration: 0.2 }}
+          initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: 8 }}
+          animate={shouldReduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
+          exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: -8 }}
+          transition={{ duration: shouldReduceMotion ? 0 : 0.2 }}
           className="flex items-start gap-4 px-4 py-2 sm:px-8"
         >
           <div className="mt-1 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-sm shadow-primary/20">
@@ -50,10 +55,10 @@ export function ThinkingIndicator({ isVisible }: ThinkingIndicatorProps) {
             <AnimatePresence mode="wait">
               <motion.div
                 key={stepIndex}
-                initial={{ opacity: 0, x: -6 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 6 }}
-                transition={{ duration: 0.2 }}
+                initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, x: -6 }}
+                animate={shouldReduceMotion ? { opacity: 1 } : { opacity: 1, x: 0 }}
+                exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, x: 6 }}
+                transition={{ duration: shouldReduceMotion ? 0 : 0.2 }}
                 className="flex items-center gap-2 text-sm text-muted-foreground"
               >
                 <Icon className="w-3.5 h-3.5 text-primary flex-shrink-0" />
@@ -66,10 +71,10 @@ export function ThinkingIndicator({ isVisible }: ThinkingIndicatorProps) {
                 <motion.div
                   key={i}
                   className="w-1.5 h-1.5 rounded-full bg-primary/40"
-                  animate={{ opacity: [0.3, 1, 0.3] }}
+                  animate={shouldReduceMotion ? { opacity: 0.8 } : { opacity: [0.3, 1, 0.3] }}
                   transition={{
-                    duration: 1.2,
-                    repeat: Infinity,
+                    duration: shouldReduceMotion ? 0 : 1.2,
+                    repeat: shouldReduceMotion ? 0 : Infinity,
                     delay: i * 0.2,
                     ease: "easeInOut",
                   }}

@@ -99,14 +99,15 @@ export function Sidebar({
 
       <aside
         className={cn(
-          "fixed top-0 left-0 z-50 flex h-full w-80 flex-col border-r border-border/70 bg-sidebar/95 p-6 transition-transform duration-300",
+          "fixed top-0 left-0 z-50 flex h-full w-80 flex-col border-r border-border/70 bg-sidebar/92 p-6 transition-transform duration-300 backdrop-blur-xl",
           "lg:static lg:translate-x-0 lg:z-auto",
           isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
       >
-        <div className="mb-6 flex items-center justify-between">
+        <div className="rule-divider mb-6 flex items-center justify-between pb-5">
           <div>
-            <div className="font-heading text-lg font-bold text-primary">Kho Tri Thức</div>
+            <div className="section-label">Knowledge rail</div>
+            <div className="mt-2 font-heading text-lg font-bold text-primary">Kho tri thức</div>
             <div className="text-xs text-muted-foreground">Tài liệu đồng bộ từ Moodle</div>
           </div>
           <Button
@@ -128,7 +129,7 @@ export function Sidebar({
                 Môn học
               </span>
             </div>
-            <div className="rounded-[1.5rem] border border-border/70 bg-card/90 p-4 shadow-sm">
+            <div className="paper-surface rounded-[1.5rem] p-4">
               <div className="text-sm font-semibold leading-snug">{courseName}</div>
               <div className="mt-1 text-xs text-muted-foreground">Sinh viên: {studentName}</div>
             </div>
@@ -143,7 +144,7 @@ export function Sidebar({
             </div>
 
             {pastSessions.length === 0 ? (
-              <div className="rounded-2xl bg-card/80 px-4 py-3 text-[11px] italic text-muted-foreground shadow-sm">
+              <div className="paper-surface rounded-2xl px-4 py-3 text-[11px] italic text-muted-foreground">
                 Chưa có phiên nào.
               </div>
             ) : (
@@ -157,10 +158,10 @@ export function Sidebar({
                     <li key={s.id}>
                       <div
                         className={cn(
-                          "rounded-[1.25rem] border px-3 py-3 transition-colors",
+                          "rounded-[1.25rem] border px-3 py-3 transition-[border-color,background-color,color,box-shadow]",
                           isViewed
                             ? "border-primary/20 bg-card text-primary shadow-sm"
-                            : "border-transparent bg-card/75 hover:bg-card hover:shadow-sm"
+                            : "border-transparent bg-card/65 hover:border-border/60 hover:bg-card hover:shadow-sm"
                         )}
                       >
                         <a
@@ -213,13 +214,13 @@ export function Sidebar({
                 <Skeleton className="h-5 w-3/4" />
               </div>
             ) : docs.length === 0 ? (
-              <div className="rounded-2xl bg-card/80 px-4 py-3 text-xs italic text-muted-foreground shadow-sm">
+              <div className="paper-surface rounded-2xl px-4 py-3 text-xs italic text-muted-foreground">
                 Chưa có tài liệu nào được ingest.
               </div>
             ) : (
               <ul className="space-y-1.5">
                 {docs.map((doc) => (
-                  <li key={doc.id} className="flex items-start gap-3 rounded-2xl bg-card/80 p-3 shadow-sm">
+                  <li key={doc.id} className="paper-surface flex items-start gap-3 rounded-2xl p-3">
                     <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-destructive/10 text-destructive">
                       <FileText className="h-4 w-4" />
                     </div>
@@ -249,20 +250,20 @@ export function Sidebar({
                 <Skeleton className="h-24 w-full rounded-2xl" />
               </div>
             ) : !overview ? (
-              <div className="rounded-2xl bg-card/80 px-4 py-3 text-xs italic text-muted-foreground shadow-sm">
+              <div className="paper-surface rounded-2xl px-4 py-3 text-xs italic text-muted-foreground">
                 Chưa tải được dữ liệu tracking.
               </div>
             ) : (
               <div className="space-y-3">
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="rounded-[1.25rem] border border-border/70 bg-card/90 p-3 shadow-sm">
+                  <div className="metric-tile rounded-[1.25rem] p-3">
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <BookOpen className="h-3.5 w-3.5" />
                       <span className="text-[10px] font-bold uppercase tracking-[0.18em]">Concept</span>
                     </div>
                     <div className="mt-2 text-2xl font-black text-primary">{overview.totalConcepts}</div>
                   </div>
-                  <div className="rounded-[1.25rem] border border-border/70 bg-card/90 p-3 shadow-sm">
+                  <div className="metric-tile rounded-[1.25rem] p-3">
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <Activity className="h-3.5 w-3.5" />
                       <span className="text-[10px] font-bold uppercase tracking-[0.18em]">Sự kiện</span>
@@ -271,7 +272,7 @@ export function Sidebar({
                   </div>
                 </div>
 
-                <div className="rounded-[1.5rem] border border-border/70 bg-card/90 p-4 shadow-sm">
+                <div className="paper-surface rounded-[1.5rem] p-4">
                   <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
                     {learningSummary?.primaryLabel ?? "Theo dõi"}
                   </div>
@@ -283,7 +284,7 @@ export function Sidebar({
                   </div>
                 </div>
 
-                <div className="rounded-[1.5rem] bg-foreground px-4 py-4 text-background shadow-sm">
+                <div className="ink-panel rounded-[1.5rem] px-4 py-4 text-background shadow-sm">
                   <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-background/60">
                     Phiên hiện tại
                   </div>
@@ -302,7 +303,7 @@ export function Sidebar({
                 {viewerRole && viewerRole !== "learner" && (
                   <a
                     href="/classroom"
-                    className="flex items-center justify-between rounded-[1.25rem] border border-primary/10 bg-primary/5 px-4 py-3 text-sm font-semibold text-primary transition-colors hover:bg-primary hover:text-primary-foreground"
+                    className="paper-surface flex items-center justify-between rounded-[1.25rem] px-4 py-3 text-sm font-semibold text-primary transition-[background-color,color,transform] hover:-translate-y-0.5 hover:bg-primary hover:text-primary-foreground"
                   >
                     <span>Xem dashboard lớp học</span>
                     <BarChart3 className="h-4 w-4" />
@@ -313,7 +314,7 @@ export function Sidebar({
           </div>
 
           {sessionId === activeSessionId && (
-            <div className="rounded-[1.75rem] bg-gradient-to-br from-primary to-secondary p-5 text-white shadow-lg shadow-primary/20">
+            <div className="ink-panel rounded-[1.75rem] p-5 text-white shadow-lg shadow-primary/20">
               <div className="mb-2 flex items-center gap-2">
                 <BarChart3 className="h-4 w-4" />
                 <span className="text-[11px] font-bold uppercase tracking-[0.22em] text-white/70">

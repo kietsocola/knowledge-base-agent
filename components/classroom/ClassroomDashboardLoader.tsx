@@ -59,7 +59,7 @@ export function ClassroomDashboardLoader({
   if (!overview) {
     return (
       <div className="flex min-h-screen items-center justify-center px-4">
-        <div className="w-full max-w-xl rounded-[2rem] border border-border/70 bg-card/90 p-8 text-center shadow-[0_30px_90px_rgba(25,69,99,0.12)]">
+        <div className="paper-surface w-full max-w-xl rounded-[2rem] p-6 text-center sm:p-8">
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-primary text-primary-foreground shadow-lg shadow-primary/20">
             <BarChart3 className="h-8 w-8 animate-pulse" />
           </div>

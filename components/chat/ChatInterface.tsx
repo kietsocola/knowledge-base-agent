@@ -4,7 +4,7 @@ import Link from "next/link"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { Chat, useChat } from "@ai-sdk/react"
 import { DefaultChatTransport } from "ai"
-import { motion, AnimatePresence } from "framer-motion"
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion"
 import { Send, PanelLeft, GraduationCap, AlertCircle, MessageCircleQuestion, History, MoreVertical, Lightbulb } from "lucide-react"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
@@ -54,6 +54,7 @@ export function ChatInterface({
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [showEvalBanner, setShowEvalBanner] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
+  const shouldReduceMotion = useReducedMotion()
 
   // Create a stable Chat instance seeded with DB history — only once on mount
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -127,13 +128,14 @@ export function ChatInterface({
       />
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="glass-panel flex shrink-0 items-center justify-between border-b border-border/60 px-4 py-4 shadow-sm sm:px-8">
+        <header className="glass-panel rule-divider flex shrink-0 items-center justify-between px-4 py-4 shadow-sm sm:px-8">
           <div className="flex items-center gap-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-primary">
               <GraduationCap className="h-5 w-5" />
             </div>
             <div>
-              <div className="font-heading text-base font-bold leading-none">{courseName}</div>
+              <div className="section-label before:w-5">Session channel</div>
+              <div className="mt-1 font-heading text-lg font-black leading-none">{courseName}</div>
               <div className="mt-1 flex items-center gap-1.5 text-[11px] text-muted-foreground">
                 <span className="h-2 w-2 rounded-full bg-emerald-500" />
                 {studentName} · Chế độ học thuật
@@ -173,32 +175,35 @@ export function ChatInterface({
         <div className="flex-1 overflow-y-auto py-6">
           {messages.length === 0 && (
             <div className="flex h-full flex-col items-center justify-center gap-4 px-6 text-center">
-              <div className="flex h-14 w-14 items-center justify-center rounded-3xl bg-primary/10 text-primary">
-                <GraduationCap className="h-7 w-7" />
-              </div>
-              <div>
-                <div className="font-heading text-xl font-bold">
+              <div className="paper-surface w-full max-w-2xl rounded-[2.3rem] p-8">
+                <div className="section-label justify-center before:hidden">Conversation start</div>
+                <div className="mt-5 flex justify-center">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-primary text-primary-foreground shadow-lg shadow-primary/20">
+                    <GraduationCap className="h-7 w-7" />
+                  </div>
+                </div>
+                <div className="mt-5 font-heading text-3xl font-black">
                   Xin chào, {studentName}!
                 </div>
-                <div className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-muted-foreground">
+                <div className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground">
                   Hỏi bất kỳ câu nào về <strong>{courseName}</strong>. Trợ lý sẽ trả lời
                   dựa trên tài liệu môn học và trả kèm trích dẫn.
                 </div>
-              </div>
-              <div className="mt-2 flex flex-wrap justify-center gap-2">
-                {[
-                  "Mảng là gì?",
-                  "Độ phức tạp thuật toán?",
-                  "Tóm tắt chương này cho mình",
-                ].map((q) => (
-                  <button
-                    key={q}
-                    onClick={() => setInput(q)}
-                    className="rounded-full border border-primary/10 bg-card px-4 py-2 text-xs font-semibold text-primary shadow-sm transition-colors hover:bg-primary hover:text-primary-foreground"
-                  >
-                    {q}
-                  </button>
-                ))}
+                <div className="mt-6 grid gap-3 sm:grid-cols-3">
+                  {[
+                    "Mảng là gì?",
+                    "Độ phức tạp thuật toán?",
+                    "Tóm tắt chương này cho mình",
+                  ].map((q) => (
+                    <button
+                      key={q}
+                      onClick={() => setInput(q)}
+                      className="metric-tile rounded-[1.4rem] px-4 py-3 text-xs font-semibold text-primary transition-colors hover:border-primary/30 hover:bg-primary/5"
+                    >
+                      {q}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           )}
@@ -216,22 +221,21 @@ export function ChatInterface({
           <AnimatePresence>
             {showEvalBanner && (
               <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 10 }}
-                className="mx-4 mb-3 flex items-center justify-between gap-3 rounded-[1.5rem] bg-gradient-to-r from-primary to-secondary p-4 text-white shadow-lg shadow-primary/20 sm:mx-8"
+                initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: 10 }}
+                animate={shouldReduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
+                exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 10 }}
+                transition={{ duration: shouldReduceMotion ? 0 : 0.2 }}
+                className="mx-4 mb-3 flex items-center justify-between gap-3 rounded-[1.8rem] bg-gradient-to-r from-primary to-secondary p-4 text-white shadow-lg shadow-primary/20 sm:mx-8"
               >
                 <div className="text-sm">
-                  <span className="font-semibold">Đã đặt 4 câu hỏi!</span>
-                  <span className="ml-1 text-white/82">
-                    Xem đánh giá năng lực của bạn →
-                  </span>
+                  <div className="text-[10px] font-bold uppercase tracking-[0.24em] text-white/60">Checkpoint</div>
+                  <div className="mt-1 font-semibold">Đã đặt 4 câu hỏi. Dữ liệu đã đủ để tạo báo cáo đánh giá.</div>
                 </div>
                 <Link
                   href="/evaluation"
                   className={buttonVariants({
                     size: "sm",
-                    className: "shrink-0 bg-card text-primary hover:bg-accent",
+                    className: "shrink-0 rounded-full bg-card text-primary hover:bg-accent",
                   })}
                 >
                   Xem ngay
@@ -267,7 +271,7 @@ export function ChatInterface({
             </div>
           </div>
         ) : (
-          <div className="glass-panel shrink-0 border-t border-border/60 px-4 pb-5 pt-4 sm:px-8">
+          <div className="glass-panel shrink-0 border-t border-border/60 px-4 pb-4 pt-4 sm:px-8 sm:pb-5">
             <div className="mb-3 flex flex-wrap justify-center gap-2 xl:hidden">
               {[
                 "Làm bài tập trắc nghiệm",
@@ -285,7 +289,7 @@ export function ChatInterface({
               ))}
             </div>
 
-            <form onSubmit={handleSubmit} className="mx-auto flex max-w-4xl items-end gap-3 rounded-[1.75rem] border border-border/70 bg-accent/70 p-2 shadow-inner">
+            <form onSubmit={handleSubmit} className="paper-surface mx-auto flex max-w-4xl items-end gap-2 rounded-[1.9rem] p-2 sm:gap-3">
               <label htmlFor="chat-input" className="sr-only">
                 Câu hỏi gửi cho trợ lý học tập
               </label>
@@ -310,7 +314,7 @@ export function ChatInterface({
                 <Send className="h-4 w-4" />
               </Button>
             </form>
-            <div className="mx-auto mt-2 flex max-w-4xl items-center justify-between">
+            <div className="mx-auto mt-2 flex max-w-4xl flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div className="text-[10px] text-muted-foreground">
                 AI trả lời dựa trên tài liệu môn học · Shift+Enter xuống dòng
               </div>

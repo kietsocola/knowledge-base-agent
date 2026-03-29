@@ -37,9 +37,10 @@ export function InterventionAlertsPanel({
   description,
 }: InterventionAlertsPanelProps) {
   return (
-    <div className="rounded-[2rem] border border-border/70 bg-card/90 p-6 shadow-sm">
+    <div className="paper-surface rounded-[2rem] p-6">
       <div>
-        <div className="text-sm font-bold">{title}</div>
+        <div className="section-label">Intervention</div>
+        <div className="mt-3 text-sm font-bold">{title}</div>
         <div className="mt-1 text-xs text-muted-foreground">{description}</div>
       </div>
 
@@ -52,7 +53,7 @@ export function InterventionAlertsPanel({
             <div key={alert.id} className={`rounded-[1.5rem] border p-5 ${tone.container}`}>
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div className="flex items-start gap-3">
-                  <div className="mt-0.5 rounded-2xl bg-card/80 p-2">
+                  <div className="mt-0.5 rounded-2xl border border-border/50 bg-card/80 p-2">
                     <Icon className="h-4 w-4" />
                   </div>
                   <div>
@@ -65,7 +66,7 @@ export function InterventionAlertsPanel({
                 </div>
               </div>
 
-              <div className="mt-4 rounded-[1.1rem] bg-card/80 px-4 py-3 text-sm">
+              <div className="mt-4 rounded-[1.1rem] border border-border/50 bg-card/80 px-4 py-3 text-sm">
                 <span className="font-semibold">Hành động đề xuất:</span> {alert.recommendedAction}
               </div>
             </div>

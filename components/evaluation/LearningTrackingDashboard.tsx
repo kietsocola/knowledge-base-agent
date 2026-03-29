@@ -32,15 +32,16 @@ export function LearningTrackingDashboard({ overview }: LearningTrackingDashboar
   ]
 
   return (
-    <div className="rounded-[2rem] border border-border/70 bg-card/90 p-6 shadow-sm">
+    <div className="paper-surface rounded-[2rem] p-6">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <div className="font-heading text-2xl font-black">Dashboard tracking học tập</div>
+          <div className="section-label">Learning tracking</div>
+          <div className="mt-3 font-heading text-2xl font-black">Dashboard tracking học tập</div>
           <div className="mt-1 text-xs text-muted-foreground">
             Tóm tắt các concept đã ghi nhận, mức độ nắm vững và hoạt động gần nhất trong phiên học.
           </div>
         </div>
-        <div className="inline-flex items-center gap-2 rounded-full bg-primary/5 px-4 py-2 text-xs font-semibold text-primary">
+        <div className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-card/80 px-4 py-2 text-xs font-semibold text-primary">
           <Clock3 className="h-3.5 w-3.5" />
           Hoạt động gần nhất: {formatDate(overview.latestActivityAt)}
         </div>
@@ -48,7 +49,7 @@ export function LearningTrackingDashboard({ overview }: LearningTrackingDashboar
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {stats.map(({ label, value, Icon }) => (
-          <div key={label} className="rounded-[1.5rem] border border-border/70 bg-accent/40 p-4">
+          <div key={label} className="metric-tile rounded-[1.5rem] p-4">
             <div className="flex items-center gap-2 text-primary">
               <Icon className="h-4 w-4" />
               <div className="text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground">

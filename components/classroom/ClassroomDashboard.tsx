@@ -36,19 +36,17 @@ export function ClassroomDashboard({ overview, courseName }: ClassroomDashboardP
   return (
     <div className="min-h-screen px-4 pb-12 pt-8 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl space-y-8">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div className="paper-surface flex flex-col gap-4 rounded-[2.4rem] px-6 py-6 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <div className="text-[11px] font-bold uppercase tracking-[0.28em] text-muted-foreground">
-              Dashboard giảng viên
-            </div>
-            <h1 className="mt-2 font-heading text-4xl font-black tracking-tight">
+            <div className="section-label">Instructor command</div>
+            <h1 className="mt-3 font-heading text-4xl font-black tracking-tight">
               Toàn cảnh lớp học
             </h1>
             <div className="mt-2 text-sm text-muted-foreground">
               {courseName} · Tóm tắt mức độ tham gia, concept yếu chung và sinh viên cần hỗ trợ.
             </div>
           </div>
-          <div className="inline-flex items-center gap-2 rounded-full bg-primary/5 px-4 py-2 text-xs font-semibold text-primary">
+          <div className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-card/80 px-4 py-2 text-xs font-semibold text-primary">
             <CalendarClock className="h-3.5 w-3.5" />
             Hoạt động gần nhất: {formatDate(overview.latestActivityAt)}
           </div>
@@ -56,7 +54,7 @@ export function ClassroomDashboard({ overview, courseName }: ClassroomDashboardP
 
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {stats.map(({ label, value, Icon }) => (
-            <div key={label} className="rounded-[1.5rem] border border-border/70 bg-card/90 p-5 shadow-sm">
+            <div key={label} className="metric-tile rounded-[1.5rem] p-5">
               <div className="flex items-center gap-2 text-primary">
                 <Icon className="h-4 w-4" />
                 <div className="text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
@@ -82,7 +80,7 @@ export function ClassroomDashboard({ overview, courseName }: ClassroomDashboardP
               description="Thể hiện mức độ hỏi đáp và các mốc đánh giá theo từng ngày có hoạt động."
             />
 
-            <section className="rounded-[2rem] border border-rose-200/70 bg-card/90 p-6 shadow-sm dark:border-rose-400/20">
+            <section className="paper-surface rounded-[2rem] p-6">
               <div className="flex items-center gap-2 text-rose-700 dark:text-rose-200">
                 <AlertTriangle className="h-4 w-4" />
                 <div className="text-sm font-bold">Concept yếu chung của lớp</div>
@@ -111,7 +109,7 @@ export function ClassroomDashboard({ overview, courseName }: ClassroomDashboardP
               </div>
             </section>
 
-            <section className="rounded-[2rem] border border-emerald-200/70 bg-card/90 p-6 shadow-sm dark:border-emerald-400/20">
+            <section className="paper-surface rounded-[2rem] p-6">
               <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-200">
                 <BookOpen className="h-4 w-4" />
                 <div className="text-sm font-bold">Concept nắm tốt nhất</div>
@@ -141,7 +139,7 @@ export function ClassroomDashboard({ overview, courseName }: ClassroomDashboardP
             </section>
           </div>
 
-          <section className="rounded-[2rem] border border-border/70 bg-card/90 p-6 shadow-sm">
+          <section className="paper-surface rounded-[2rem] p-6">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <div className="text-sm font-bold">Sinh viên cần chú ý</div>
@@ -188,7 +186,7 @@ export function ClassroomDashboard({ overview, courseName }: ClassroomDashboardP
           </section>
         </div>
 
-        <section className="rounded-[2rem] border border-border/70 bg-card/90 p-6 shadow-sm">
+          <section className="paper-surface rounded-[2rem] p-6">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <div className="text-sm font-bold">Bảng tiến độ từng sinh viên</div>

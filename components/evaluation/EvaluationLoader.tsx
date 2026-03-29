@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useEffect, useState } from "react"
-import { motion } from "framer-motion"
+import { motion, useReducedMotion } from "framer-motion"
 import { BarChart3, Loader2, AlertCircle } from "lucide-react"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { EvaluationCard } from "./EvaluationCard"
@@ -27,6 +27,7 @@ export function EvaluationLoader({
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [step, setStep] = useState(0)
+  const shouldReduceMotion = useReducedMotion()
 
   const LOADING_STEPS = [
     "Đang phân tích hội thoại…",
@@ -36,12 +37,14 @@ export function EvaluationLoader({
   ]
 
   useEffect(() => {
-    let interval: NodeJS.Timeout
+    let interval: NodeJS.Timeout | undefined
 
     async function fetchEvaluation() {
-      interval = setInterval(() => {
-        setStep((s) => Math.min(s + 1, LOADING_STEPS.length - 1))
-      }, 800)
+      if (!shouldReduceMotion) {
+        interval = setInterval(() => {
+          setStep((s) => Math.min(s + 1, LOADING_STEPS.length - 1))
+        }, 800)
+      }
 
       try {
         const [evaluationRes, overviewRes] = await Promise.all([
@@ -73,22 +76,24 @@ export function EvaluationLoader({
       } catch (err) {
         setError(String(err))
       } finally {
-        clearInterval(interval)
+        if (interval) clearInterval(interval)
         setLoading(false)
       }
     }
 
     fetchEvaluation()
-    return () => clearInterval(interval)
-  }, [sessionId])
+    return () => {
+      if (interval) clearInterval(interval)
+    }
+  }, [sessionId, shouldReduceMotion])
 
   if (loading) {
     return (
       <div id="main-content" className="soft-grid flex min-h-screen items-center justify-center px-4 py-12">
-        <div className="w-full max-w-xl rounded-[2rem] border border-border/70 bg-card/90 p-8 text-center shadow-[0_30px_90px_rgba(25,69,99,0.12)]">
+        <div className="paper-surface w-full max-w-xl rounded-[2rem] p-6 text-center sm:p-8">
           <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+            animate={shouldReduceMotion ? { opacity: 1 } : { rotate: 360 }}
+            transition={shouldReduceMotion ? { duration: 0 } : { duration: 2, repeat: Infinity, ease: "linear" }}
             className="mx-auto flex h-16 w-16 items-center justify-center rounded-3xl bg-primary text-primary-foreground shadow-lg shadow-primary/20"
           >
             <BarChart3 className="h-8 w-8" />
@@ -101,8 +106,9 @@ export function EvaluationLoader({
           </div>
           <motion.div
             key={step}
-            initial={{ opacity: 0, y: 4 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: 4 }}
+            animate={shouldReduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
+            transition={{ duration: shouldReduceMotion ? 0 : 0.2 }}
             className="mt-4 text-sm text-primary"
           >
             {LOADING_STEPS[step]}
