@@ -32,6 +32,7 @@ interface ChatInterfaceProps {
   courseId: string
   courseName: string
   studentName: string
+  viewerRole?: "learner" | "instructor" | "admin"
   initialMessages?: InitialMessage[]
   pastSessions?: SessionSummary[]
   isReadOnly?: boolean
@@ -43,6 +44,7 @@ export function ChatInterface({
   courseId,
   courseName,
   studentName,
+  viewerRole,
   initialMessages = [],
   pastSessions = [],
   isReadOnly = false,
@@ -117,6 +119,7 @@ export function ChatInterface({
         sessionId={sessionId}
         activeSessionId={activeSessionId}
         messageCount={messageCount}
+        viewerRole={viewerRole}
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
         pastSessions={pastSessions}

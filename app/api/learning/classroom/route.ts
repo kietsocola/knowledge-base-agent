@@ -10,7 +10,7 @@ import {
   students,
 } from "@/lib/db/schema"
 import { buildClassroomOverview } from "@/lib/learning/classroom-overview"
-import { authorizeCourseScopedRequest } from "@/lib/security/course-scoped-access"
+import { authorizeClassroomAccess } from "@/lib/security/classroom-authorization"
 import { SESSION_OPTIONS } from "@/lib/session"
 import type { SessionData } from "@/types/lti"
 
@@ -20,7 +20,7 @@ export async function GET(request: Request) {
 
   const cookieStore = await cookies()
   const viewerSession = await getIronSession<SessionData>(cookieStore, SESSION_OPTIONS)
-  const access = authorizeCourseScopedRequest(viewerSession, requestedCourseId)
+  const access = authorizeClassroomAccess(viewerSession, requestedCourseId)
 
   if (!access.ok) {
     return Response.json({ error: access.error }, { status: access.status })

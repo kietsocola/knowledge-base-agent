@@ -19,6 +19,7 @@ interface EvaluationCardProps {
   sessionId: string
   studentName: string
   courseName: string
+  viewerRole?: "learner" | "instructor" | "admin"
 }
 
 function CountUpScore({ target }: { target: number }) {
@@ -46,6 +47,7 @@ export function EvaluationCard({
   sessionId,
   studentName,
   courseName,
+  viewerRole,
 }: EvaluationCardProps) {
   const supportPlan = buildSupportPlan(result)
   const supportTone = {
@@ -257,12 +259,14 @@ export function EvaluationCard({
               Tiếp tục hỏi đáp
             </Button>
           </a>
-          <a href="/classroom">
-            <Button variant="outline" className="gap-2 rounded-full bg-white px-6">
-              <GraduationCap className="w-4 h-4" />
-              Xem dashboard lớp học
-            </Button>
-          </a>
+          {viewerRole && viewerRole !== "learner" && (
+            <a href="/classroom">
+              <Button variant="outline" className="gap-2 rounded-full bg-white px-6">
+                <GraduationCap className="w-4 h-4" />
+                Xem dashboard lớp học
+              </Button>
+            </a>
+          )}
           <a href="/portal">
             <Button className="gap-2 rounded-full px-6">
               Bắt đầu phiên mới

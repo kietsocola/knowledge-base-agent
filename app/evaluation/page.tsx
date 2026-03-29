@@ -5,7 +5,7 @@ import { eq } from "drizzle-orm"
 import { SESSION_OPTIONS } from "@/lib/session"
 import { EvaluationLoader } from "@/components/evaluation/EvaluationLoader"
 import { getDb } from "@/lib/db/index"
-import { chatSessions } from "@/lib/db/schema"
+import { chatSessions, courses } from "@/lib/db/schema"
 import type { SessionData } from "@/types/lti"
 
 export const metadata = {
@@ -35,24 +35,27 @@ export default async function EvaluationPage({ searchParams }: Props) {
     redirect("/portal")
   }
 
-  // If viewing a specific session, verify it belongs to this student
-  if (querySessionId && querySessionId !== session.sessionId) {
-    const [target] = await db
-      .select({ studentId: chatSessions.studentId })
-      .from(chatSessions)
-      .where(eq(chatSessions.id, querySessionId))
-      .limit(1)
+  const [targetSession] = await db
+    .select({
+      studentId: chatSessions.studentId,
+      courseId: chatSessions.courseId,
+      courseTitle: courses.title,
+    })
+    .from(chatSessions)
+    .leftJoin(courses, eq(courses.id, chatSessions.courseId))
+    .where(eq(chatSessions.id, targetSessionId))
+    .limit(1)
 
-    if (!target || target.studentId !== session.studentId) {
-      redirect("/portal")
-    }
+  if (!targetSession || targetSession.studentId !== session.studentId) {
+    redirect("/portal")
   }
 
   return (
     <EvaluationLoader
       sessionId={targetSessionId}
       studentName={session.displayName}
-      courseName={session.courseName ?? session.courseId}
+      courseName={targetSession.courseTitle ?? targetSession.courseId ?? session.courseName ?? session.courseId}
+      viewerRole={session.role}
     />
   )
 }

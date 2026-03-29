@@ -12,12 +12,14 @@ interface EvaluationLoaderProps {
   sessionId: string
   studentName: string
   courseName: string
+  viewerRole?: "learner" | "instructor" | "admin"
 }
 
 export function EvaluationLoader({
   sessionId,
   studentName,
   courseName,
+  viewerRole,
 }: EvaluationLoaderProps) {
   const [result, setResult] = useState<EvaluationResult | null>(null)
   const [overview, setOverview] = useState<LearningOverview | null>(null)
@@ -146,6 +148,7 @@ export function EvaluationLoader({
       sessionId={sessionId}
       studentName={studentName}
       courseName={courseName}
+      viewerRole={viewerRole}
     />
   )
 }

@@ -21,6 +21,7 @@ interface SidebarProps {
   courseId: string
   courseName: string
   studentName: string
+  viewerRole?: "learner" | "instructor" | "admin"
   /** Session ID being viewed (URL param) */
   sessionId: string
   /** Session ID in cookie — the "active" (current) session */
@@ -41,6 +42,7 @@ export function Sidebar({
   courseId,
   courseName,
   studentName,
+  viewerRole,
   sessionId,
   activeSessionId,
   messageCount,
@@ -291,13 +293,15 @@ export function Sidebar({
                   </div>
                 </div>
 
-                <a
-                  href="/classroom"
-                  className="flex items-center justify-between rounded-[1.25rem] border border-primary/10 bg-primary/5 px-4 py-3 text-sm font-semibold text-primary transition-colors hover:bg-primary hover:text-white"
-                >
-                  <span>Xem dashboard lớp học</span>
-                  <BarChart3 className="h-4 w-4" />
-                </a>
+                {viewerRole && viewerRole !== "learner" && (
+                  <a
+                    href="/classroom"
+                    className="flex items-center justify-between rounded-[1.25rem] border border-primary/10 bg-primary/5 px-4 py-3 text-sm font-semibold text-primary transition-colors hover:bg-primary hover:text-white"
+                  >
+                    <span>Xem dashboard lớp học</span>
+                    <BarChart3 className="h-4 w-4" />
+                  </a>
+                )}
               </div>
             )}
           </div>
