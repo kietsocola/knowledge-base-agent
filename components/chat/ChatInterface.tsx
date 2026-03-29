@@ -4,8 +4,7 @@ import Link from "next/link"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { Chat, useChat } from "@ai-sdk/react"
 import { DefaultChatTransport } from "ai"
-import { motion, AnimatePresence, useReducedMotion } from "framer-motion"
-import { Send, PanelLeft, GraduationCap, AlertCircle, MessageCircleQuestion, History, MoreVertical, Lightbulb } from "lucide-react"
+import { Send, PanelLeft, PanelLeftOpen, GraduationCap, AlertCircle, MessageCircleQuestion, History, MoreVertical, Lightbulb } from "lucide-react"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { ThinkingIndicator } from "./ThinkingIndicator"
@@ -52,9 +51,8 @@ export function ChatInterface({
 }: ChatInterfaceProps) {
   const [input, setInput] = useState("")
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [showEvalBanner, setShowEvalBanner] = useState(false)
+  const [desktopSidebarExpanded, setDesktopSidebarExpanded] = useState(true)
   const bottomRef = useRef<HTMLDivElement>(null)
-  const shouldReduceMotion = useReducedMotion()
 
   // Create a stable Chat instance seeded with DB history — only once on mount
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -78,18 +76,6 @@ export function ChatInterface({
 
   // Derived primitives — stable values, not array references
   const messageCount = messages.filter((m) => m.role === "user").length
-  const lastMsg = messages.at(-1)
-  const triggerEval =
-    lastMsg?.role === "assistant" &&
-    !!(lastMsg.metadata as { triggerEvaluation?: boolean } | undefined)?.triggerEvaluation
-
-  // Show eval banner — only re-run when count or triggerEval flag actually changes
-  useEffect(() => {
-    if (messageCount >= 4 || triggerEval) {
-      setShowEvalBanner(true)
-    }
-  }, [messageCount, triggerEval])
-
   // Auto-scroll to bottom on new messages
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -123,11 +109,27 @@ export function ChatInterface({
         messageCount={messageCount}
         viewerRole={viewerRole}
         isOpen={sidebarOpen}
+        isDesktopExpanded={desktopSidebarExpanded}
         onClose={() => setSidebarOpen(false)}
+        onDesktopToggle={() => setDesktopSidebarExpanded((value) => !value)}
+        onDesktopExpand={() => setDesktopSidebarExpanded(true)}
+        onDesktopCollapse={() => setDesktopSidebarExpanded(false)}
         pastSessions={pastSessions}
       />
 
       <div className="flex min-w-0 flex-1 flex-col">
+        {!desktopSidebarExpanded && (
+          <button
+            type="button"
+            onClick={() => setDesktopSidebarExpanded(true)}
+            className="fixed left-[5rem] top-28 z-30 hidden items-center gap-2 rounded-full border border-border/70 bg-card/92 px-3 py-2 text-xs font-semibold text-primary shadow-lg backdrop-blur-lg transition-[transform,background-color] hover:-translate-y-0.5 hover:bg-card lg:flex"
+            aria-label="Mở thanh tri thức"
+          >
+            <PanelLeftOpen className="h-3.5 w-3.5" />
+            Mở rail
+          </button>
+        )}
+
         <header className="glass-panel rule-divider flex shrink-0 items-center justify-between px-4 py-4 shadow-sm sm:px-8">
           <div className="flex items-center gap-2">
             <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/10 text-primary">
@@ -172,7 +174,7 @@ export function ChatInterface({
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto py-6">
+        <div className="app-scrollbar flex-1 overflow-y-auto py-6">
           {messages.length === 0 && (
             <div className="flex h-full flex-col items-center justify-center gap-4 px-6 text-center">
               <div className="paper-surface w-full max-w-2xl rounded-[2.3rem] p-8">
@@ -216,34 +218,6 @@ export function ChatInterface({
 
           <div ref={bottomRef} />
         </div>
-
-        {!isReadOnly && (
-          <AnimatePresence>
-            {showEvalBanner && (
-              <motion.div
-                initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: 10 }}
-                animate={shouldReduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
-                exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 10 }}
-                transition={{ duration: shouldReduceMotion ? 0 : 0.2 }}
-                className="mx-4 mb-3 flex items-center justify-between gap-3 rounded-[1.8rem] bg-gradient-to-r from-primary to-secondary p-4 text-white shadow-lg shadow-primary/20 sm:mx-8"
-              >
-                <div className="text-sm">
-                  <div className="text-[10px] font-bold uppercase tracking-[0.24em] text-white/60">Checkpoint</div>
-                  <div className="mt-1 font-semibold">Đã đặt 4 câu hỏi. Dữ liệu đã đủ để tạo báo cáo đánh giá.</div>
-                </div>
-                <Link
-                  href="/evaluation"
-                  className={buttonVariants({
-                    size: "sm",
-                    className: "shrink-0 rounded-full bg-card text-primary hover:bg-accent",
-                  })}
-                >
-                  Xem ngay
-                </Link>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        )}
 
         {error && (
           <div className="mx-4 mb-2 flex items-center gap-2 rounded-2xl border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive sm:mx-8">
