@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { motion } from "framer-motion"
+import { motion, useReducedMotion } from "framer-motion"
 import {
   Radar,
   RadarChart as RechartsRadarChart,
@@ -18,6 +18,7 @@ interface RadarChartProps {
 
 export function EvaluationRadarChart({ scores }: RadarChartProps) {
   const [animated, setAnimated] = useState(false)
+  const shouldReduceMotion = useReducedMotion()
   const [displayedScores, setDisplayedScores] = useState<RadarScores>({
     "Hiểu khái niệm": 0,
     "Giải quyết vấn đề": 0,
@@ -27,12 +28,17 @@ export function EvaluationRadarChart({ scores }: RadarChartProps) {
   })
 
   useEffect(() => {
+    if (shouldReduceMotion) {
+      setDisplayedScores(scores)
+      setAnimated(true)
+      return
+    }
     const timer = setTimeout(() => {
       setDisplayedScores(scores)
       setAnimated(true)
     }, 300)
     return () => clearTimeout(timer)
-  }, [scores])
+  }, [scores, shouldReduceMotion])
 
   const data = Object.entries(displayedScores).map(([subject, value]) => ({
     subject,
@@ -46,9 +52,9 @@ export function EvaluationRadarChart({ scores }: RadarChartProps) {
 
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.5, ease: "easeOut" }}
+      initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, scale: 0.9 }}
+      animate={shouldReduceMotion ? { opacity: 1 } : { opacity: 1, scale: 1 }}
+      transition={{ duration: shouldReduceMotion ? 0 : 0.5, ease: "easeOut" }}
       className="w-full h-72"
     >
       <ResponsiveContainer width="100%" height="100%">
@@ -80,8 +86,8 @@ export function EvaluationRadarChart({ scores }: RadarChartProps) {
             fill={primaryColor}
             fillOpacity={0.25}
             strokeWidth={2}
-            isAnimationActive={true}
-            animationDuration={800}
+            isAnimationActive={!shouldReduceMotion}
+            animationDuration={shouldReduceMotion ? 0 : 800}
             animationEasing="ease-out"
           />
         </RechartsRadarChart>

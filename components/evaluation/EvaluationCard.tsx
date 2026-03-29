@@ -1,20 +1,29 @@
 "use client"
 
+import Link from "next/link"
 import { useEffect, useState } from "react"
-import { motion } from "framer-motion"
-import { CheckCircle2, AlertCircle, BookOpen, ArrowRight, MessageSquare } from "lucide-react"
+import { motion, useReducedMotion } from "framer-motion"
+import { CheckCircle2, AlertCircle, BookOpen, ArrowRight, MessageSquare, GraduationCap } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+import { Button, buttonVariants } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { EvaluationRadarChart } from "./RadarChart"
+import { LearningTrackingDashboard } from "./LearningTrackingDashboard"
+import { buildSupportPlan } from "@/lib/evaluation/support-plan"
+import { buildStudyPlan } from "@/lib/planner/study-plan"
+import { StudyPlanPanel } from "@/components/planner/StudyPlanPanel"
 import type { EvaluationResult } from "@/types/evaluation"
+import type { LearningOverview } from "@/types/learning"
+import { pageWidthPresets } from "@/lib/layout/page-widths"
 
 interface EvaluationCardProps {
   result: EvaluationResult
+  overview: LearningOverview
   sessionId: string
   studentName: string
   courseName: string
+  viewerRole?: "learner" | "instructor" | "admin"
 }
 
 function CountUpScore({ target }: { target: number }) {
@@ -38,70 +47,97 @@ function CountUpScore({ target }: { target: number }) {
 
 export function EvaluationCard({
   result,
+  overview,
   sessionId,
   studentName,
   courseName,
+  viewerRole,
 }: EvaluationCardProps) {
+  const shouldReduceMotion = useReducedMotion()
+  const supportPlan = buildSupportPlan(result)
+  const studyPlan = buildStudyPlan(result, overview)
+  const transition = (delay = 0) =>
+    shouldReduceMotion ? { duration: 0 } : { delay, duration: 0.3, ease: "easeOut" as const }
+  const supportTone = {
+    high: {
+      badge: "bg-rose-100 text-rose-700 dark:bg-rose-400/15 dark:text-rose-200",
+      dot: "bg-rose-500 dark:bg-rose-300",
+      border: "border-rose-200/70 dark:border-rose-400/20",
+    },
+    medium: {
+      badge: "bg-amber-100 text-amber-700 dark:bg-amber-400/15 dark:text-amber-200",
+      dot: "bg-amber-500 dark:bg-amber-300",
+      border: "border-amber-200/70 dark:border-amber-400/20",
+    },
+    low: {
+      badge: "bg-emerald-100 text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-200",
+      dot: "bg-emerald-500 dark:bg-emerald-300",
+      border: "border-emerald-200/70 dark:border-emerald-400/20",
+    },
+  }[supportPlan.level]
+  const shellStyle = { maxWidth: `${pageWidthPresets.evaluation.maxWidth}px` }
+
   return (
-    <div className="min-h-screen px-4 pb-12 pt-8 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-6xl space-y-8">
+    <div id="main-content" className={`min-h-screen pb-12 pt-8 ${pageWidthPresets.evaluation.shellClassName}`}>
+      <div className="mx-auto space-y-8" style={shellStyle}>
         <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between"
+          initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: -10 }}
+          animate={shouldReduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
+          transition={transition()}
+          className="paper-surface flex flex-col gap-5 rounded-[2.4rem] px-6 py-6 lg:flex-row lg:items-end lg:justify-between"
         >
           <div>
-            <div className="text-[11px] font-bold uppercase tracking-[0.28em] text-muted-foreground">
+            <div className="section-label">
               Kết quả học tập
             </div>
-            <h1 className="mt-2 font-heading text-4xl font-black tracking-tight">
+            <h1 className="mt-4 font-heading text-4xl font-black tracking-tight">
               Báo cáo đánh giá
             </h1>
-            <div className="mt-2 text-sm text-muted-foreground">
+            <div className="mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground">
               {studentName} · {courseName}
             </div>
           </div>
-          <div className="rounded-full bg-emerald-100 px-4 py-2 text-xs font-bold text-emerald-700">
+          <div className="rounded-full bg-emerald-100 px-4 py-2 text-xs font-bold text-emerald-700 dark:bg-emerald-400/15 dark:text-emerald-200">
             Hoàn thành phân tích
           </div>
         </motion.div>
 
         <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.1 }}
-          className="overflow-hidden rounded-[2rem] bg-gradient-to-br from-primary to-[#0066ff] p-8 text-white shadow-[0_24px_70px_rgba(0,80,203,0.24)]"
+          initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, scale: 0.96 }}
+          animate={shouldReduceMotion ? { opacity: 1 } : { opacity: 1, scale: 1 }}
+          transition={transition(0.1)}
+          className="ink-panel overflow-hidden rounded-[2.6rem] p-8"
         >
-          <div className="grid gap-8 lg:grid-cols-[0.72fr_0.28fr] lg:items-center">
+          <div className="grid gap-8 lg:grid-cols-[0.76fr_0.24fr] lg:items-center">
             <div className="flex items-start gap-5">
-              <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-3xl bg-white/20">
+              <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-3xl bg-white/12">
                 <BookOpen className="h-8 w-8" />
               </div>
               <div>
-                <div className="text-sm font-semibold text-blue-50/80">Gợi ý từ AI</div>
-                <div className="mt-2 max-w-3xl text-lg font-medium leading-relaxed text-blue-50">
+                <div className="section-label text-white/60 before:bg-white/20">AI brief</div>
+                <div className="mt-3 max-w-3xl text-lg font-medium leading-relaxed text-white/86">
                   "{result.nextStepMessage}"
                 </div>
               </div>
             </div>
-            <div className="rounded-[1.75rem] bg-white/12 p-6 backdrop-blur-sm">
-              <div className="text-xs font-semibold uppercase tracking-[0.22em] text-white/60">
+            <div className="rounded-[1.75rem] border border-white/10 bg-white/8 p-6 backdrop-blur-sm">
+              <div className="text-xs font-semibold uppercase tracking-[0.22em] text-white/55">
                 Điểm tổng thể
               </div>
               <div className="mt-3 text-6xl font-black tabular-nums">
                 <CountUpScore target={result.overallScore} />
               </div>
-              <div className="mt-1 text-xs text-white/70">/ 10 đánh giá tổng quan</div>
+              <div className="mt-1 text-xs text-white/72">/ 10 đánh giá tổng quan</div>
             </div>
           </div>
         </motion.div>
 
         <div className="grid gap-6 lg:grid-cols-12">
           <motion.div
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.2 }}
-            className="lg:col-span-8 rounded-[2rem] border border-white/70 bg-white/85 p-6 shadow-sm"
+            initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, x: -10 }}
+            animate={shouldReduceMotion ? { opacity: 1 } : { opacity: 1, x: 0 }}
+            transition={transition(0.2)}
+            className="lg:col-span-8 rounded-[2rem] border border-border/70 bg-card/90 p-6 shadow-sm"
           >
             <div className="mb-6 flex items-center justify-between gap-4">
               <div>
@@ -118,35 +154,35 @@ export function EvaluationCard({
           </motion.div>
 
           <motion.div
-            initial={{ opacity: 0, x: 10 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.25 }}
+            initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, x: 10 }}
+            animate={shouldReduceMotion ? { opacity: 1 } : { opacity: 1, x: 0 }}
+            transition={transition(0.25)}
             className="lg:col-span-4 space-y-4"
           >
-            <div className="rounded-[1.75rem] border border-white/70 bg-white/85 p-6 shadow-sm">
+            <div className="rounded-[1.75rem] border border-border/70 bg-card/90 p-6 shadow-sm">
               <div className="mb-4 flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                <CheckCircle2 className="h-4 w-4 text-emerald-500 dark:text-emerald-300" />
                 <div className="text-sm font-bold">Điểm mạnh</div>
               </div>
               <ul className="space-y-3">
                 {result.strengths.map((s, i) => (
                   <li key={i} className="flex items-start gap-2 text-sm leading-relaxed">
-                    <div className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-emerald-500" />
+                    <div className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-emerald-500 dark:bg-emerald-300" />
                     {s}
                   </li>
                 ))}
               </ul>
             </div>
 
-            <div className="rounded-[1.75rem] border border-white/70 bg-white/85 p-6 shadow-sm">
+            <div className="rounded-[1.75rem] border border-border/70 bg-card/90 p-6 shadow-sm">
               <div className="mb-4 flex items-center gap-2">
-                <AlertCircle className="h-4 w-4 text-amber-500" />
+                <AlertCircle className="h-4 w-4 text-amber-500 dark:text-amber-300" />
                 <div className="text-sm font-bold">Cần cải thiện</div>
               </div>
               <ul className="space-y-3">
                 {result.gaps.map((g, i) => (
                   <li key={i} className="flex items-start gap-2 text-sm leading-relaxed">
-                    <div className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-amber-500" />
+                    <div className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-amber-500 dark:bg-amber-300" />
                     {g}
                   </li>
                 ))}
@@ -157,10 +193,10 @@ export function EvaluationCard({
 
         {result.recommendedTopics.length > 0 && (
           <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="rounded-[2rem] border border-white/70 bg-white/85 p-6 shadow-sm"
+            initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: 10 }}
+            animate={shouldReduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
+            transition={transition(0.3)}
+            className="rounded-[2rem] border border-border/70 bg-card/90 p-6 shadow-sm"
           >
             <div className="mb-4 flex items-center gap-2">
               <BookOpen className="h-4 w-4 text-primary" />
@@ -176,24 +212,98 @@ export function EvaluationCard({
           </motion.div>
         )}
 
+        <div className="grid gap-6 xl:grid-cols-[1.08fr_0.92fr]">
+          <motion.div
+            initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: 10 }}
+            animate={shouldReduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
+            transition={transition(0.33)}
+          >
+            <LearningTrackingDashboard overview={overview} />
+          </motion.div>
+
+          <motion.div
+            initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: 10 }}
+            animate={shouldReduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
+            transition={transition(0.34)}
+          >
+            <StudyPlanPanel plan={studyPlan} />
+          </motion.div>
+        </div>
+
         <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
+          initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: 10 }}
+          animate={shouldReduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
+          transition={transition(0.35)}
+          className={`rounded-[2rem] border ${supportTone.border} bg-card/90 p-6 shadow-sm`}
+        >
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <div className="mb-2 flex items-center gap-2">
+                <MessageSquare className="h-4 w-4 text-primary" />
+                <div className="text-sm font-bold">Phương án hỗ trợ đề xuất</div>
+              </div>
+              <div className="text-sm text-muted-foreground">
+                {supportPlan.summary}
+              </div>
+            </div>
+            <div className={`rounded-full px-4 py-2 text-xs font-bold ${supportTone.badge}`}>
+              {supportPlan.title}
+            </div>
+          </div>
+
+          <div className="mt-5 space-y-3">
+            {supportPlan.actions.map((action, index) => (
+              <div key={index} className="flex items-start gap-3 text-sm leading-relaxed">
+                <div className={`mt-1.5 h-2 w-2 flex-shrink-0 rounded-full ${supportTone.dot}`} />
+                <div>{action}</div>
+              </div>
+            ))}
+          </div>
+
+          {supportPlan.shouldEscalateToInstructor && (
+            <div className="mt-5 rounded-[1.25rem] bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:bg-rose-950/20 dark:text-rose-200">
+              Nên chuẩn bị câu hỏi cụ thể và trao đổi thêm với giảng viên để được hỗ trợ trực tiếp.
+            </div>
+          )}
+        </motion.div>
+
+        <motion.div
+          initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: 10 }}
+          animate={shouldReduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
+          transition={transition(0.4)}
           className="flex flex-wrap justify-center gap-3"
         >
-          <a href={`/chat/${sessionId}`}>
-            <Button variant="outline" className="gap-2 rounded-full bg-white px-6">
-              <MessageSquare className="w-4 h-4" />
-              Tiếp tục hỏi đáp
-            </Button>
-          </a>
-          <a href="/portal">
-            <Button className="gap-2 rounded-full px-6">
-              Bắt đầu phiên mới
-              <ArrowRight className="w-4 h-4" />
-            </Button>
-          </a>
+          <Link
+            href={`/chat/${sessionId}`}
+            className={buttonVariants({
+              variant: "outline",
+              className: "gap-2 rounded-full bg-card px-6",
+            })}
+          >
+            <MessageSquare className="w-4 h-4" />
+            Tiếp tục hỏi đáp
+          </Link>
+          {viewerRole && viewerRole !== "learner" && (
+            <Link
+              href="/classroom"
+              className={buttonVariants({
+                variant: "outline",
+                className: "gap-2 rounded-full bg-card px-6",
+              })}
+            >
+              <GraduationCap className="w-4 h-4" />
+              Xem dashboard lớp học
+            </Link>
+          )}
+          <Link
+            href="/portal"
+            className={buttonVariants({
+              className: "gap-2 rounded-full px-6",
+            })}
+          >
+            Bắt đầu phiên mới
+            <ArrowRight className="w-4 h-4" />
+          </Link>
         </motion.div>
 
         <div className="pb-4 text-center text-[10px] text-muted-foreground">

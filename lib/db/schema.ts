@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { integer, pgTable, text, real, customType } from "drizzle-orm/pg-core";
+import { integer, pgTable, text, real, customType, uniqueIndex } from "drizzle-orm/pg-core";
 
 // pgvector custom type: stores float[] as PostgreSQL vector
 const vector = (name: string, dimensions: number) =>
@@ -81,6 +81,55 @@ export const evaluations = pgTable("evaluations", {
   createdAt: integer("created_at").default(sql`extract(epoch from now())::int`),
 });
 
+export const courseConcepts = pgTable(
+  "course_concepts",
+  {
+    id: text("id").primaryKey(),
+    courseId: text("course_id").references(() => courses.id).notNull(),
+    name: text("name").notNull(),
+    nameKey: text("name_key").notNull(),
+    source: text("source").default("evaluation"),
+    createdAt: integer("created_at").default(sql`extract(epoch from now())::int`),
+    updatedAt: integer("updated_at").default(sql`extract(epoch from now())::int`),
+  },
+  (table) => ({
+    courseConceptUnique: uniqueIndex("course_concepts_course_name_key_idx").on(table.courseId, table.nameKey),
+  })
+);
+
+export const studentConceptMastery = pgTable(
+  "student_concept_mastery",
+  {
+    id: text("id").primaryKey(),
+    studentId: text("student_id").references(() => students.id).notNull(),
+    courseId: text("course_id").references(() => courses.id).notNull(),
+    conceptId: text("concept_id").references(() => courseConcepts.id).notNull(),
+    masteryScore: real("mastery_score"),
+    confidenceScore: real("confidence_score"),
+    evidenceCount: integer("evidence_count").default(1),
+    source: text("source").default("evaluation"),
+    lastEvaluatedAt: integer("last_evaluated_at"),
+    updatedAt: integer("updated_at").default(sql`extract(epoch from now())::int`),
+  },
+  (table) => ({
+    studentConceptUnique: uniqueIndex("student_concept_mastery_student_course_concept_idx").on(
+      table.studentId,
+      table.courseId,
+      table.conceptId
+    ),
+  })
+);
+
+export const learningEvents = pgTable("learning_events", {
+  id: text("id").primaryKey(),
+  studentId: text("student_id").references(() => students.id).notNull(),
+  courseId: text("course_id").references(() => courses.id).notNull(),
+  sessionId: text("session_id").references(() => chatSessions.id).notNull(),
+  eventType: text("event_type").notNull(),
+  eventPayload: text("event_payload"),
+  createdAt: integer("created_at").default(sql`extract(epoch from now())::int`),
+});
+
 // Type exports for use in queries
 export type Student = typeof students.$inferSelect;
 export type Course = typeof courses.$inferSelect;
@@ -89,3 +138,6 @@ export type DocumentChunk = typeof documentChunks.$inferSelect;
 export type ChatSession = typeof chatSessions.$inferSelect;
 export type Message = typeof messages.$inferSelect;
 export type Evaluation = typeof evaluations.$inferSelect;
+export type CourseConcept = typeof courseConcepts.$inferSelect;
+export type StudentConceptMastery = typeof studentConceptMastery.$inferSelect;
+export type LearningEvent = typeof learningEvents.$inferSelect;

@@ -5,23 +5,60 @@ export interface MockStudent {
   id: string;
   name: string;
   email: string;
+  roleLabel: string;
+  statusLabel: string;
 }
 
 export interface MockCourse {
   id: string;
   title: string;
+  shortCode: string;
+  readinessLabel: string;
 }
 
 export const MOCK_STUDENTS: MockStudent[] = [
-  { id: "student-001", name: "Nguyễn Văn An", email: "an.nguyen@demo.edu.vn" },
-  { id: "student-002", name: "Trần Thị Bình", email: "binh.tran@demo.edu.vn" },
-  { id: "student-003", name: "Lê Minh Cường", email: "cuong.le@demo.edu.vn" },
+  {
+    id: "student-001",
+    name: "Nguyễn Văn An",
+    email: "an.nguyen@demo.edu.vn",
+    roleLabel: "Learner",
+    statusLabel: "Active",
+  },
+  {
+    id: "student-002",
+    name: "Trần Thị Bình",
+    email: "binh.tran@demo.edu.vn",
+    roleLabel: "Learner",
+    statusLabel: "Active",
+  },
+  {
+    id: "student-003",
+    name: "Lê Minh Cường",
+    email: "cuong.le@demo.edu.vn",
+    roleLabel: "Learner",
+    statusLabel: "Active",
+  },
 ];
 
 export const MOCK_COURSES: MockCourse[] = [
-  { id: "course-ctdl-001", title: "Cấu Trúc Dữ Liệu & Giải Thuật" },
-  { id: "course-oop-001", title: "Lập Trình Hướng Đối Tượng" },
-  { id: "course-db-001", title: "Cơ Sở Dữ Liệu" },
+  {
+    id: "course-ctdl-001",
+    title: "Cấu Trúc Dữ Liệu & Giải Thuật",
+    shortCode: "DSA",
+    readinessLabel: "Sẵn sàng",
+  },
+  {
+    id: "course-oop-001",
+    title: "Lập Trình Hướng Đối Tượng",
+    shortCode: "OOP",
+    readinessLabel: "Sẵn sàng",
+  },
+  {
+    id: "course-db-001",
+    title: "Cơ Sở Dữ Liệu",
+    shortCode: "DB",
+    readinessLabel: "Sẵn sàng",
+  },
 ];
 
 /**

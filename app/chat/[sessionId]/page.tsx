@@ -78,6 +78,7 @@ export default async function ChatPage({ params }: Props) {
       courseId={targetSession.courseId ?? session.courseId}
       courseName={session.courseName ?? session.courseId}
       studentName={session.displayName}
+      viewerRole={session.role}
       initialMessages={initialMessages}
       pastSessions={pastSessions}
       isReadOnly={isReadOnly}

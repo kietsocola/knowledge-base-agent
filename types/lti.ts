@@ -28,4 +28,5 @@ export interface SessionData {
   courseName: string;
   sessionId: string;
   displayName: string;
+  role?: "learner" | "instructor" | "admin";
 }

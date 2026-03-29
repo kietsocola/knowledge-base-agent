@@ -33,6 +33,12 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col">
+        <a
+          href="#main-content"
+          className="skip-link"
+        >
+          Bỏ qua điều hướng
+        </a>
         <ThemeProvider
           attribute="class"
           defaultTheme="light"

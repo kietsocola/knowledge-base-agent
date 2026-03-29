@@ -107,7 +107,7 @@ export function UploadModal({
           </p>
         </SheetHeader>
 
-        <div className="mt-6 flex flex-1 flex-col gap-5 overflow-y-auto pb-4">
+        <div className="mt-6 flex flex-1 flex-col gap-5 overflow-y-auto px-4 pb-4">
           {/* Drop zone */}
           <div
             onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
@@ -163,8 +163,11 @@ export function UploadModal({
 
           {/* Doc name */}
           <div className="space-y-1.5">
-            <label className="text-sm font-semibold">Tên tài liệu</label>
+            <label htmlFor="upload-doc-name" className="text-sm font-semibold">
+              Tên tài liệu
+            </label>
             <Input
+              id="upload-doc-name"
               value={docName}
               onChange={(e) => setDocName(e.target.value)}
               placeholder="VD: Giáo trình CTDL Chương 1"
@@ -177,7 +180,7 @@ export function UploadModal({
             <div className="flex items-start gap-3 rounded-2xl bg-primary/5 p-4 text-sm">
               <Loader2 className="mt-0.5 h-5 w-5 shrink-0 animate-spin text-primary" />
               <div>
-                <div className="font-semibold text-primary">Đang xử lý...</div>
+                  <div className="font-semibold text-primary">Đang xử lý…</div>
                 <div className="mt-0.5 text-xs text-muted-foreground">
                   Đọc PDF → Chia nhỏ → Tạo embedding → Lưu vào Supabase
                 </div>
@@ -218,7 +221,7 @@ export function UploadModal({
               {status === "uploading" ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Đang xử lý...
+                  Đang xử lý…
                 </>
               ) : (
                 "Bắt đầu ingest"

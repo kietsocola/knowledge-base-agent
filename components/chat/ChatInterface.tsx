@@ -1,17 +1,19 @@
 "use client"
 
+import Link from "next/link"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { Chat, useChat } from "@ai-sdk/react"
 import { DefaultChatTransport } from "ai"
-import { motion, AnimatePresence } from "framer-motion"
-import { Send, PanelLeft, GraduationCap, AlertCircle, MessageCircleQuestion, History, MoreVertical, Lightbulb } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { Send, PanelLeft, PanelLeftOpen, Sparkles, AlertCircle, MessageCircleQuestion, History, MoreVertical, Compass, BookOpenText, Workflow, Command, ArrowUpRight } from "lucide-react"
+import { Button, buttonVariants } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { ThinkingIndicator } from "./ThinkingIndicator"
 import { MessageBubble } from "./MessageBubble"
 import { Sidebar } from "@/components/layout/Sidebar"
 import { ThemeToggle } from "@/components/layout/ThemeToggle"
 import { toast } from "sonner"
+import { chatEmptyState, chatEmptyStateToneClasses, chatParticipantLabels, chatQuickActions } from "@/lib/chat/chat-surface"
+import { getUIMessageText } from "@/lib/chat/message-text"
 
 interface InitialMessage {
   id: string
@@ -32,6 +34,7 @@ interface ChatInterfaceProps {
   courseId: string
   courseName: string
   studentName: string
+  viewerRole?: "learner" | "instructor" | "admin"
   initialMessages?: InitialMessage[]
   pastSessions?: SessionSummary[]
   isReadOnly?: boolean
@@ -43,14 +46,17 @@ export function ChatInterface({
   courseId,
   courseName,
   studentName,
+  viewerRole,
   initialMessages = [],
   pastSessions = [],
   isReadOnly = false,
 }: ChatInterfaceProps) {
   const [input, setInput] = useState("")
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [showEvalBanner, setShowEvalBanner] = useState(false)
+  const [desktopSidebarExpanded, setDesktopSidebarExpanded] = useState(true)
+  const [animatedAssistantId, setAnimatedAssistantId] = useState<string | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
+  const hasHydratedAssistantHistory = useRef(false)
 
   // Create a stable Chat instance seeded with DB history — only once on mount
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -74,25 +80,35 @@ export function ChatInterface({
 
   // Derived primitives — stable values, not array references
   const messageCount = messages.filter((m) => m.role === "user").length
-  const lastMsg = messages.at(-1)
-  const triggerEval =
-    lastMsg?.role === "assistant" &&
-    !!(lastMsg.metadata as { triggerEvaluation?: boolean } | undefined)?.triggerEvaluation
-
-  // Show eval banner — only re-run when count or triggerEval flag actually changes
-  useEffect(() => {
-    if (messageCount >= 4 || triggerEval) {
-      setShowEvalBanner(true)
-    }
-  }, [messageCount, triggerEval])
-
-  // Auto-scroll to bottom on new messages
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [messages, status])
-
   const isStreaming = status === "streaming" || status === "submitted"
   const canSend = input.trim().length > 0 && !isStreaming
+  const lastAssistantMessage = [...messages].reverse().find((message) => message.role === "assistant")
+  const hasVisibleAssistantText = Boolean(lastAssistantMessage && getUIMessageText(lastAssistantMessage).trim())
+  const showThinkingIndicator = status === "submitted" || (status === "streaming" && !hasVisibleAssistantText)
+
+  useEffect(() => {
+    const lastAssistantId = lastAssistantMessage?.id ?? null
+
+    if (!hasHydratedAssistantHistory.current) {
+      hasHydratedAssistantHistory.current = true
+      return
+    }
+
+    if (lastAssistantId && lastAssistantId !== animatedAssistantId) {
+      setAnimatedAssistantId(lastAssistantId)
+    }
+  }, [animatedAssistantId, lastAssistantMessage?.id])
+
+  // Auto-scroll to bottom on new messages. Avoid "smooth" during token streaming
+  // because it fights with the incoming chunks and creates a jerky feel.
+  useEffect(() => {
+    const behavior: ScrollBehavior = isStreaming ? "auto" : "smooth"
+    const frame = window.requestAnimationFrame(() => {
+      bottomRef.current?.scrollIntoView({ behavior, block: "end" })
+    })
+
+    return () => window.cancelAnimationFrame(frame)
+  }, [messages, status, isStreaming])
 
   function handleSubmit(e?: React.FormEvent) {
     e?.preventDefault()
@@ -109,7 +125,7 @@ export function ChatInterface({
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#f7f9fb]">
+    <div id="main-content" className="flex h-screen overflow-hidden bg-background">
       <Sidebar
         courseId={courseId}
         courseName={courseName}
@@ -117,31 +133,58 @@ export function ChatInterface({
         sessionId={sessionId}
         activeSessionId={activeSessionId}
         messageCount={messageCount}
+        viewerRole={viewerRole}
         isOpen={sidebarOpen}
+        isDesktopExpanded={desktopSidebarExpanded}
         onClose={() => setSidebarOpen(false)}
+        onDesktopToggle={() => setDesktopSidebarExpanded((value) => !value)}
+        onDesktopExpand={() => setDesktopSidebarExpanded(true)}
+        onDesktopCollapse={() => setDesktopSidebarExpanded(false)}
         pastSessions={pastSessions}
       />
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="glass-panel flex shrink-0 items-center justify-between border-b border-white/60 px-4 py-4 shadow-sm sm:px-8">
-          <div className="flex items-center gap-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
-              <GraduationCap className="h-5 w-5" />
+        {!desktopSidebarExpanded && (
+          <button
+            type="button"
+            onClick={() => setDesktopSidebarExpanded(true)}
+            className="fixed left-[4.5rem] top-18 z-30 hidden items-center gap-2 rounded-full border border-border/70 bg-card/92 px-3 py-1.5 text-xs font-semibold text-primary shadow-lg backdrop-blur-lg transition-[transform,background-color] hover:-translate-y-0.5 hover:bg-card lg:flex"
+            aria-label="Mở thanh tri thức"
+          >
+            <PanelLeftOpen className="h-3.5 w-3.5" />
+            Mở rail
+          </button>
+        )}
+
+        <header className="glass-panel rule-divider flex shrink-0 items-center justify-between px-4 py-2 shadow-sm sm:px-5">
+          <div className="flex items-center gap-3">
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl border border-primary/10 bg-primary text-primary-foreground shadow-[0_10px_24px_-18px_rgba(25,69,99,0.58)]">
+              <Command className="h-3.5 w-3.5" />
             </div>
             <div>
-              <div className="font-heading text-base font-bold leading-none">{courseName}</div>
-              <div className="mt-1 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+              <div className="font-heading text-[15px] font-black leading-none tracking-tight sm:text-base">{courseName}</div>
+              <div className="mt-0.5 flex items-center gap-1.5 text-[10px] text-muted-foreground">
                 <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                {studentName} · Chế độ học thuật
+                <span className="truncate">{studentName} · {chatParticipantLabels.assistant}</span>
               </div>
             </div>
           </div>
           <div className="flex items-center gap-1.5">
             <ThemeToggle />
-            <Button variant="ghost" size="icon" className="hidden h-9 w-9 text-muted-foreground xl:inline-flex">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="hidden h-9 w-9 text-muted-foreground xl:inline-flex"
+              aria-label="Lịch sử phiên học"
+            >
               <History className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="icon" className="hidden h-9 w-9 text-muted-foreground xl:inline-flex">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="hidden h-9 w-9 text-muted-foreground xl:inline-flex"
+              aria-label="Tùy chọn phiên học"
+            >
               <MoreVertical className="h-4 w-4" />
             </Button>
             <Button
@@ -156,119 +199,138 @@ export function ChatInterface({
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto py-6">
+        <div className="app-scrollbar flex-1 overflow-y-auto py-2.5 sm:py-3">
           {messages.length === 0 && (
             <div className="flex h-full flex-col items-center justify-center gap-4 px-6 text-center">
-              <div className="flex h-14 w-14 items-center justify-center rounded-3xl bg-primary/10 text-primary">
-                <GraduationCap className="h-7 w-7" />
-              </div>
-              <div>
-                <div className="font-heading text-xl font-bold">
-                  Xin chào, {studentName}!
+              <div className={`w-full max-w-3xl rounded-[1.8rem] border p-6 shadow-[0_20px_60px_-28px_rgba(15,23,32,0.18)] dark:shadow-[0_24px_72px_-30px_rgba(0,0,0,0.55)] sm:p-8 ${chatEmptyStateToneClasses.shell}`}>
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/60 pb-5 text-left">
+                  <div>
+                    <div className={`text-[11px] font-bold uppercase tracking-[0.24em] ${chatEmptyStateToneClasses.kicker}`}>
+                      {chatEmptyState.kicker}
+                    </div>
+                    <div className={`mt-2 font-heading text-3xl font-black tracking-tight ${chatEmptyStateToneClasses.title}`}>
+                      {chatEmptyState.title}
+                    </div>
+                  </div>
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-primary/10 bg-primary text-primary-foreground shadow-[0_14px_32px_-18px_rgba(25,69,99,0.55)]">
+                    <Workflow className="h-5 w-5" />
+                  </div>
                 </div>
-                <div className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-muted-foreground">
-                  Hỏi bất kỳ câu nào về <strong>{courseName}</strong>. Trợ lý sẽ trả lời
-                  dựa trên tài liệu môn học và trả kèm trích dẫn.
+
+                <div className="mt-6 grid gap-4 text-left lg:grid-cols-[0.78fr_0.22fr]">
+                  <div>
+                    <div className="text-base font-semibold text-foreground">
+                      {studentName}, bạn đang ở phiên <strong>{courseName}</strong>.
+                    </div>
+                    <div className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+                      {chatEmptyState.description}
+                    </div>
+                  </div>
+                  <div className={`rounded-[1.2rem] border p-4 ${chatEmptyStateToneClasses.modeCard}`}>
+                    <div className={`text-[10px] font-bold uppercase tracking-[0.2em] ${chatEmptyStateToneClasses.modeLabel}`}>
+                      mode
+                    </div>
+                    <div className="mt-2 flex items-center gap-2 text-sm font-semibold text-primary">
+                      <Sparkles className="h-4 w-4" />
+                      Academic session
+                    </div>
+                  </div>
                 </div>
-              </div>
-              <div className="mt-2 flex flex-wrap justify-center gap-2">
-                {[
-                  "Mảng là gì?",
-                  "Độ phức tạp thuật toán?",
-                  "Tóm tắt chương này cho mình",
-                ].map((q) => (
-                  <button
-                    key={q}
-                    onClick={() => setInput(q)}
-                    className="rounded-full border border-primary/10 bg-white px-4 py-2 text-xs font-semibold text-primary shadow-sm transition-colors hover:bg-primary hover:text-white"
-                  >
-                    {q}
-                  </button>
-                ))}
+
+                <div className="mt-6 grid gap-3 sm:grid-cols-3">
+                  {chatQuickActions.map((q, index) => {
+                    const Icon = [Compass, BookOpenText, ArrowUpRight][index] ?? Compass
+
+                    return (
+                    <button
+                      key={q}
+                      onClick={() => setInput(q)}
+                      className="group rounded-[1.1rem] border border-border/70 bg-background/84 px-4 py-4 text-left transition-[border-color,background-color,transform] hover:-translate-y-0.5 hover:border-primary/24 hover:bg-card"
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-primary/10 bg-primary/6 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+                          <Icon className="h-4 w-4" />
+                        </div>
+                        <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+                          Action
+                        </span>
+                      </div>
+                      <div className="mt-4 text-sm font-semibold leading-snug text-foreground">
+                        {q}
+                      </div>
+                    </button>
+                    )
+                  })}
+                </div>
               </div>
             </div>
           )}
 
           {messages.map((message) => (
-            <MessageBubble key={message.id} message={message} />
+            <MessageBubble
+              key={message.id}
+              message={message}
+              shouldAnimateReveal={message.id === animatedAssistantId}
+            />
           ))}
 
-          <ThinkingIndicator isVisible={status === "submitted"} />
+          <ThinkingIndicator isVisible={showThinkingIndicator} />
 
           <div ref={bottomRef} />
         </div>
 
-        {!isReadOnly && (
-          <AnimatePresence>
-            {showEvalBanner && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 10 }}
-                className="mx-4 mb-3 flex items-center justify-between gap-3 rounded-[1.5rem] bg-gradient-to-r from-primary to-[#0066ff] p-4 text-white shadow-lg shadow-primary/20 sm:mx-8"
-              >
-                <div className="text-sm">
-                  <span className="font-semibold">Đã đặt 4 câu hỏi!</span>
-                  <span className="ml-1 text-blue-50/80">
-                    Xem đánh giá năng lực của bạn →
-                  </span>
-                </div>
-                <a href="/evaluation">
-                  <Button size="sm" className="shrink-0 bg-white text-primary hover:bg-blue-50">
-                    Xem ngay
-                  </Button>
-                </a>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        )}
-
         {error && (
-          <div className="mx-4 mb-2 flex items-center gap-2 rounded-2xl border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive sm:mx-8">
-            <AlertCircle className="h-4 w-4 shrink-0" />
-            {error.message}
-          </div>
-        )}
+            <div className="mx-4 mb-2 flex items-center gap-2 rounded-2xl border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive sm:mx-6">
+              <AlertCircle className="h-4 w-4 shrink-0" />
+              {error.message}
+            </div>
+          )}
 
         {isReadOnly ? (
-          <div className="shrink-0 border-t border-white/60 px-4 pb-4 pt-3 sm:px-8">
-            <div className="flex items-center justify-between gap-3 rounded-[1.4rem] border border-white/70 bg-white/80 p-4">
+          <div className="shrink-0 border-t border-border/60 px-4 pb-4 pt-3 sm:px-8">
+            <div className="flex items-center justify-between gap-3 rounded-[1.4rem] border border-border/70 bg-card/80 p-4">
               <div className="text-xs text-muted-foreground">
                 Đây là phiên chat cũ — chỉ xem, không thể gửi thêm tin nhắn.
               </div>
-              <a href="/portal">
-                <Button size="sm" variant="outline" className="h-8 shrink-0 rounded-full text-xs">
-                  Phiên mới
-                </Button>
-              </a>
+              <Link
+                href="/portal"
+                className={buttonVariants({
+                  size: "sm",
+                  variant: "outline",
+                  className: "h-8 shrink-0 rounded-full text-xs",
+                })}
+              >
+                Phiên mới
+              </Link>
             </div>
           </div>
         ) : (
-          <div className="glass-panel shrink-0 border-t border-white/60 px-4 pb-5 pt-4 sm:px-8">
-            <div className="mb-3 flex flex-wrap justify-center gap-2 xl:hidden">
-              {[
-                "Làm bài tập trắc nghiệm",
-                "Tóm tắt chương này",
-                "Giải thích ví dụ thực tế",
-              ].map((label) => (
+          <div className="glass-panel shrink-0 border-t border-border/60 px-4 pb-2.5 pt-2 sm:px-5 sm:pb-3">
+            <div className="mb-2 flex flex-wrap justify-center gap-2 xl:hidden">
+              {chatQuickActions.map((label) => (
                 <button
                   key={label}
                   onClick={() => setInput(label)}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-primary/10 bg-white px-4 py-2 text-xs font-semibold text-primary shadow-sm transition-colors hover:bg-primary hover:text-white"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-primary/10 bg-card px-3 py-1.5 text-[11px] font-semibold text-primary shadow-sm transition-[border-color,background-color,color] hover:border-primary/20 hover:bg-primary hover:text-primary-foreground"
                 >
-                  <Lightbulb className="h-3 w-3" />
+                  <ArrowUpRight className="h-3 w-3" />
                   {label}
                 </button>
               ))}
             </div>
 
-            <form onSubmit={handleSubmit} className="mx-auto flex max-w-4xl items-end gap-3 rounded-[1.75rem] border border-white/70 bg-[#eef2f6] p-2 shadow-inner">
+            <form onSubmit={handleSubmit} className="mx-auto flex max-w-4xl items-end gap-2 rounded-[1.5rem] border border-border/70 bg-card/95 p-1.5 shadow-[0_18px_48px_-24px_rgba(15,23,32,0.16)] backdrop-blur-xl sm:gap-2">
+              <label htmlFor="chat-input" className="sr-only">
+                Câu hỏi gửi cho trợ lý học tập
+              </label>
               <Textarea
+                id="chat-input"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Hỏi bất kỳ điều gì về tài liệu..."
-                className="min-h-[52px] max-h-32 resize-none border-0 bg-transparent px-3 py-3 text-sm shadow-none focus-visible:ring-0"
+                aria-label="Nhập câu hỏi về tài liệu môn học"
+                placeholder="Nhập yêu cầu học tập, câu hỏi, hoặc nhiệm vụ bạn muốn xử lý…"
+                className="min-h-[42px] max-h-32 resize-none border-0 bg-transparent px-3 py-2 text-sm shadow-none focus-visible:ring-0"
                 disabled={isStreaming}
                 rows={1}
               />
@@ -276,23 +338,21 @@ export function ChatInterface({
                 type="submit"
                 size="icon"
                 disabled={!canSend}
-                className="h-11 w-11 shrink-0 rounded-2xl shadow-lg shadow-primary/25"
+                aria-label="Gửi câu hỏi"
+                className="h-9 w-9 shrink-0 rounded-full shadow-[0_12px_24px_-14px_rgba(25,69,99,0.55)]"
               >
                 <Send className="h-4 w-4" />
               </Button>
             </form>
-            <div className="mx-auto mt-2 flex max-w-4xl items-center justify-between">
-              <div className="text-[10px] text-muted-foreground">
-                AI trả lời dựa trên tài liệu môn học · Shift+Enter xuống dòng
-              </div>
+            <div className="mx-auto mt-1 flex max-w-4xl items-center justify-end">
               <button
                 type="button"
                 onClick={() => {
                   const lastUserPart = messages.filter(m => m.role === "user").at(-1)
                     ?.parts.find((p: { type: string }) => p.type === "text") as { type: "text"; text: string } | undefined
                   const question = input.trim() || lastUserPart?.text || "câu hỏi của bạn"
-                  const toastId = toast.loading("Đang gửi đến giảng viên...", {
-                    description: question.length > 60 ? question.slice(0, 60) + "..." : question,
+                  const toastId = toast.loading("Đang gửi đến giảng viên…", {
+                    description: question.length > 60 ? question.slice(0, 60) + "…" : question,
                   })
                   setTimeout(() => {
                     toast.success("Đã gửi!", {

@@ -4,6 +4,7 @@ import { and, desc, eq } from "drizzle-orm"
 import { getDb } from "@/lib/db/index"
 import { students, courses, chatSessions } from "@/lib/db/schema"
 import { MOCK_STUDENTS, MOCK_COURSES } from "@/lib/lti/mock"
+import { resolveSessionRole } from "@/lib/lti/roles"
 import { validateLTIToken } from "@/lib/lti/validator"
 import { SESSION_OPTIONS } from "@/lib/session"
 import type { SessionData } from "@/types/lti"
@@ -26,6 +27,7 @@ export async function POST(request: Request) {
     let courseId: string
     let courseTitle: string
     let ltiIss: string
+    let role: SessionData["role"]
 
     if (ltiMode === "mock" && body.studentId && body.courseId) {
       // Portal sends { studentId, courseId } — build mock session server-side
@@ -40,6 +42,7 @@ export async function POST(request: Request) {
       courseId = course.id
       courseTitle = course.title
       ltiIss = "https://mock-moodle.demo.edu.vn"
+      role = "learner"
     } else if (body.id_token) {
       // Standard LTI 1.3 JWT flow
       const claims = await validateLTIToken(body.id_token, ltiMode, ltiSecret)
@@ -49,6 +52,7 @@ export async function POST(request: Request) {
       courseId = claims.context.id
       courseTitle = claims.context.title
       ltiIss = claims.iss
+      role = resolveSessionRole(claims.roles)
     } else {
       return Response.json({ error: "Missing id_token or mock params" }, { status: 400 })
     }
@@ -133,6 +137,7 @@ export async function POST(request: Request) {
     ironSession.courseName = courseTitle
     ironSession.sessionId = sessionId
     ironSession.displayName = studentName
+    ironSession.role = role
     await ironSession.save()
 
     return Response.json({

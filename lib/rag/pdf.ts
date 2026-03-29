@@ -1,83 +1,78 @@
-﻿import { createRequire } from "module"
-import { pathToFileURL } from "url"
-
 type PdfResult = {
   text: string
   numpages: number
 }
 
-type PdfParseModule =
-  | ((buffer: Buffer) => Promise<PdfResult>)
-  | {
-      default?: unknown
-      PDFParse?: new (opts: { data: Uint8Array }) => {
-        getText: () => Promise<{ text: string; total: number }>
-        destroy?: () => Promise<void>
-      }
-    }
+type PdfTextItem = {
+  str?: string
+  hasEOL?: boolean
+}
 
-type PdfParserCtor = new (opts: { data: Uint8Array }) => {
-  getText: () => Promise<{ text: string; total: number }>
+type PdfParseTextResult = {
+  text?: string
+  total?: number
+}
+
+type PdfParseInstance = {
+  getText: () => Promise<PdfParseTextResult>
   destroy?: () => Promise<void>
 }
 
-const requireForPdf = createRequire(import.meta.url)
+type PdfParseModule = {
+  PDFParse: new (options: { data: Buffer | Uint8Array }) => PdfParseInstance
+}
 
-function resolveWorkerSrc(): string | undefined {
-  const candidates = [
-    "pdf-parse/dist/worker/pdf.worker.mjs",
-    "pdf-parse/dist/pdf-parse/esm/pdf.worker.mjs",
-    "pdfjs-dist/legacy/build/pdf.worker.mjs",
-    "pdfjs-dist/build/pdf.worker.mjs",
-  ]
+let pdfParseModulePromise: Promise<PdfParseModule> | null = null
 
-  for (const candidate of candidates) {
-    try {
-      const abs = requireForPdf.resolve(candidate)
-      return pathToFileURL(abs).toString()
-    } catch {
-      continue
+async function loadPdfParseModule(): Promise<PdfParseModule> {
+  if (!pdfParseModulePromise) {
+    pdfParseModulePromise = (async () => {
+      const runtimeRequire = eval("require") as NodeRequire
+      return runtimeRequire("pdf-parse") as PdfParseModule
+    })()
+  }
+
+  return pdfParseModulePromise
+}
+
+export function joinPdfTextItems(items: PdfTextItem[]): string {
+  const parts: string[] = []
+
+  for (const item of items) {
+    const value = item.str?.trim()
+    if (!value) continue
+
+    if (parts.length > 0 && !parts.at(-1)?.endsWith("\n")) {
+      parts.push(" ")
+    }
+
+    parts.push(value)
+
+    if (item.hasEOL) {
+      parts.push("\n")
     }
   }
 
-  return undefined
+  return parts
+    .join("")
+    .replace(/ *\n */g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim()
 }
 
 export async function parsePdf(buffer: Buffer | Uint8Array): Promise<PdfResult> {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const mod = requireForPdf("pdf-parse") as PdfParseModule
-  const input = buffer instanceof Uint8Array ? Buffer.from(buffer) : buffer
+  const { PDFParse } = await loadPdfParseModule()
+  const parser = new PDFParse({ data: buffer })
 
-  if (typeof mod === "function") {
-    return mod(input)
+  try {
+    const result = await parser.getText()
+    const text = result.text?.trim() ?? ""
+
+    return {
+      text,
+      numpages: result.total ?? 0,
+    }
+  } finally {
+    await parser.destroy?.()
   }
-
-  const PDFParseCtor =
-    (mod as { PDFParse?: unknown }).PDFParse ??
-    (mod as { default?: { PDFParse?: unknown } }).default?.PDFParse
-
-  if (typeof PDFParseCtor === "function") {
-    const parserCtor = PDFParseCtor as PdfParserCtor
-    const ctorWithWorker = PDFParseCtor as PdfParserCtor & {
-      setWorker?: (workerSrc?: string) => string
-    }
-
-    const workerSrc = resolveWorkerSrc()
-    if (typeof ctorWithWorker.setWorker === "function") {
-      ctorWithWorker.setWorker(workerSrc)
-    }
-
-    const parser = new parserCtor({ data: new Uint8Array(input) })
-
-    try {
-      const textResult = await parser.getText()
-      return { text: textResult.text, numpages: textResult.total }
-    } finally {
-      if (typeof parser.destroy === "function") {
-        await parser.destroy().catch(() => undefined)
-      }
-    }
-  }
-
-  throw new Error("Unsupported pdf-parse export shape")
 }
