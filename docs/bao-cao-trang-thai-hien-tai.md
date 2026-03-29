@@ -22,7 +22,7 @@ Neu quy doi thanh thang muc do 5 cap:
 
 Thi source code nay dang o:
 
-**Muc 3+/5**
+**Muc 3.5/5**
 
 Ly do:
 
@@ -30,7 +30,7 @@ Ly do:
 - da co chat, RAG, citation, session history, evaluation
 - da duoc bo sung mot so hardening ve quyen truy cap va cache
 - da co test cho nhom logic quan trong
-- da bat dau co concept tracking va learning events o muc nen tang
+- da co concept tracking, learning events, va dashboard tracking hien thi tren UI
 - nhung chua co learning analytics day du, chua co multi-agent that, chua co production LTI that, chua dat muc production
 
 ## 3. Nhung gi da co trong source hien tai
@@ -48,6 +48,8 @@ Ly do:
 - concept tracking foundation
 - concept mastery persistence
 - learning event timeline foundation
+- learning tracking dashboard tren trang evaluation
+- learning tracking summary ngay trong sidebar chat
 
 ### 3.2 Backend va data da co
 
@@ -68,6 +70,7 @@ Ly do:
 - them `course_concepts` va `student_concept_mastery`
 - persist concept mastery sau moi lan evaluation moi
 - them `learning_events` cho `chat` va `evaluation`
+- them API overview va UI tracking cho evaluation/sidebar
 
 ### 3.4 Test da co
 
@@ -80,6 +83,8 @@ Hien da co testcase cho:
 - concept tracking signal builder
 - concept mastery merge logic
 - learning event factory
+- learning overview aggregator
+- sidebar learning summary builder
 
 Dieu nay nang du an tu muc "demo co code" len muc "MVP co logic kiem thu mot phan".
 
@@ -91,7 +96,7 @@ Dieu nay nang du an tu muc "demo co code" len muc "MVP co logic kiem thu mot pha
 - flow san pham ro, de ban giam khao trai nghiem
 - bai toan giao duc ro rang
 - citation tang do tin cay
-- evaluation, support plan va concept tracking giup san pham vuot qua chatbot hoi dap don thuan
+- evaluation, support plan, concept tracking va tracking dashboard giup san pham vuot qua chatbot hoi dap don thuan
 
 ### 4.2 Manh ve ky thuat
 
@@ -115,8 +120,8 @@ Day dang la:
 - co session history
 - co evaluation theo hoi thoai
 - co de xuat ho tro o muc rule-based
-- co concept tracking o muc persisted foundation
-- co learning event timeline o muc persisted foundation
+- co concept tracking o muc persisted va da hien thi tren UI
+- co learning event timeline o muc persisted va da co dashboard tong hop co ban
 - du tot de di thi hackathon neu pitch dung
 
 ## 6. Muc do hoan thien theo tung nhom
@@ -163,7 +168,7 @@ Han che:
 
 ### 6.4 Tracking va learning analytics
 
-Muc do: **Da co nen tang, chua day du**
+Muc do: **Da co backend va UI co ban**
 
 Nhan xet:
 
@@ -172,11 +177,14 @@ Nhan xet:
 - da co support plan
 - da co event log hoc tap o muc nen tang
 - da co mastery theo concept o muc nen tang
+- da co dashboard tracking tren trang evaluation
+- da co tom tat tracking ngay trong sidebar chat
 
 Han che:
 
-- chua co dashboard thong ke theo thoi gian
-- chua hien thi ro user dang hoc gi o cap do chi tiet tren UI
+- chua co timeline/chart thong ke theo ngay-tuan-thang
+- chua co dashboard cho giang vien/lop hoc
+- chua co canh bao som hoac intervention workflow
 
 ### 6.5 Tich hop LMS/LTI
 
@@ -213,9 +221,9 @@ Danh gia thang than:
 
 ### 7.2 Moi dat mot phan
 
-- tracking qua session
+- tracking qua session va concept
 - support cho nguoi hoc
-- concept tracking o muc persisted data
+- thong ke hoc tap o muc dashboard co ban
 
 ### 7.3 Chua dat
 
@@ -243,21 +251,21 @@ Khong nen pitch la:
 
 ### Uu tien 1
 
-Hien thi concept mastery len UI evaluation/dashboard
+Them timeline/chart thong ke tu `learning_events`
 
 Tac dung:
 
-- user thay duoc minh dang yeu o chu de nao
-- BGK thay ngay gia tri tracking
+- cho thay tien trinh hoc tap theo ngay/tuan
+- tang do thuyet phuc cua phan analytics
 
 ### Uu tien 2
 
-Them dashboard thong ke tu `learning_events`
+Them dashboard cho giang vien / lop hoc
 
 Tac dung:
 
-- tao timeline hoc tap
-- thong ke duoc theo ngay/tuan
+- nhin duoc sinh vien nao dang yeu o concept nao
+- mo rong ro hon sang use case nha truong
 
 ### Uu tien 3
 
@@ -269,12 +277,12 @@ Tac dung:
 
 ### Uu tien 4
 
-Them dashboard tien trinh cho giang vien / lop hoc
+Them intervention workflow va canh bao som
 
 Tac dung:
 
-- ban giam khao thay duoc gia tri tracking bang mat
-- mo rong sang use case B2B/B2G
+- de xuat ro khi nao can tu hoc tiep, khi nao can hoi giang vien
+- gan hon voi bai toan ho tro hoc tap chu dong
 
 ### Uu tien 5
 
@@ -290,9 +298,9 @@ Source code hien tai khong con o muc y tuong hay mock UI nua. No da la mot MVP h
 
 Danh gia tong quat:
 
-- **Muc do hien tai:** Muc 3+/5
-- **Tu khoa dung nhat:** Hackathon-ready MVP co nen tang learning analytics
-- **Gia tri hien tai:** RAG learning assistant + evaluation + support plan + concept tracking foundation
-- **Khoang cach lon nhat:** chua hien thi analytics day du tren UI va chua la multi-agent that
+- **Muc do hien tai:** Muc 3.5/5
+- **Tu khoa dung nhat:** Hackathon-ready MVP co learning analytics da len UI
+- **Gia tri hien tai:** RAG learning assistant + evaluation + support plan + concept tracking + tracking dashboard
+- **Khoang cach lon nhat:** chua co analytics cho giang vien/lop hoc va chua la multi-agent that
 
 Neu tiep tuc nang cap dung huong, du an nay co the di tu MVP demo sang mot nen tang learning analytics thong minh trong cac buoc tiep theo.
