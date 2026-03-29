@@ -1,6 +1,6 @@
 # Bao Cao Danh Gia Source Code Va Dinh Huong San Pham Hackathon
 
-Cap nhat: 2026-03-28
+Cap nhat: 2026-03-29
 
 ## 1. Muc tieu bao cao
 
@@ -12,7 +12,7 @@ Tai lieu nay duoc tao de phuc vu 3 muc dich:
 
 ## 2. Tom tat nhanh
 
-Source code hien tai da hoan thanh mot MVP trinh dien kha tot cho bai thi hackathon, voi cac thanh phan chinh:
+Source code hien tai da vuot qua muc MVP chatbot RAG co ban va dang o muc `AI learning copilot` phu hop de demo hackathon, voi cac thanh phan chinh:
 
 - portal mo phong luong vao tu LMS/LTI
 - chat hoc tap theo mon hoc
@@ -20,19 +20,21 @@ Source code hien tai da hoan thanh mot MVP trinh dien kha tot cho bai thi hackat
 - citation de tang tinh minh bach
 - luu lich su session
 - evaluation sau hoi thoai
+- tracking theo concept
+- timeline hoc tap
+- dashboard ca nhan va dashboard lop hoc
+- intervention alerts
+- planner flow cho phien hoc tiep theo
 
 Tuy nhien, he thong hien tai chua phai la mot nen tang "multi-agent learning analytics" day du. Thuc chat, phien ban nay dang o muc:
 
-- `AI tutor + RAG + session history + post-session evaluation`
+- `AI learning copilot + tracking + intervention + planner flow`
 
 Chu chua dat den muc:
 
-- tracking nguoi hoc theo concept
-- luu tien trinh hoc tap theo thoi gian
-- phan tich muc do thong thao
-- phat hien lo hong kien thuc
-- de xuat intervention ca nhan hoa
-- co nhieu agent voi vai tro tach biet va phoi hop ro rang
+- multi-agent orchestration that o runtime
+- notification / escalation that den giang vien
+- LTI production that
 
 Neu dinh huong pitch dung cach, day van la mot bai thi co kha nang thuyet phuc cao vi:
 
@@ -47,11 +49,13 @@ Neu dinh huong pitch dung cach, day van la mot bai thi co kha nang thuyet phuc c
 
 - Frontend Next.js 15 App Router
 - UI demo dep va kha hoan chinh cho landing, portal, chat, evaluation
+- UI dashboard cho classroom va learning tracking
 - DB dung PostgreSQL qua Drizzle
 - Vector retrieval dung pgvector ngay trong bang `document_chunks`
 - OpenAI cho chat, embedding va evaluation
 - Session cookie thong qua `iron-session`
 - upload PDF va ingest embedding truc tiep trong he thong
+- parser PDF runtime da on dinh qua `pdfjs-dist`
 
 ### 3.2 Cac luong nghiep vu da hoat dong
 
@@ -64,15 +68,17 @@ Neu dinh huong pitch dung cach, day van la mot bai thi co kha nang thuyet phuc c
 7. Luu lich su chat
 8. Sau mot nguong hoi dap, hien goi y xem danh gia
 9. Trang evaluation sinh bao cao nang luc tu hoi thoai
+10. Sinh dashboard tracking, intervention alerts va study plan cho phien hoc tiep theo
 
 ### 3.3 Kiem tra build
 
 Da kiem tra truc tiep trong repo:
 
-- `pnpm exec tsc --noEmit`: pass
+- `pnpm test`: pass
+- `pnpm typecheck`: pass
 - `pnpm build`: pass
 
-Co canh bao build lien quan den `pdf-parse` va workspace root cua Next.js, nhung chua gay loi chay demo.
+Hai warning build cu lien quan den workspace root va `pdf-parse` da duoc xu ly.
 
 ## 4. Diem manh cua san pham hien tai
 
@@ -83,7 +89,9 @@ Co canh bao build lien quan den `pdf-parse` va workspace root cua Next.js, nhung
 - Co citation: tang do tin cay va tinh minh bach
 - Co lich su chat: tao cam giac he thong "nho" qua trinh hoc
 - Co evaluation: da vuot qua muc chatbot hoi dap thong thuong
-- Co cau chuyen phat trien tiep: tu AI tutor thanh learning copilot va learning analytics platform
+- Co classroom dashboard: tang suc thuyet phuc cho use case giang vien
+- Co intervention alerts: bien analytics thanh hanh dong
+- Co planner flow: tang suc thuyet phuc cho cau chuyen multi-agent learning copilot
 
 ### 4.2 Diem manh ky thuat
 
@@ -91,6 +99,7 @@ Co canh bao build lien quan den `pdf-parse` va workspace root cua Next.js, nhung
 - Data model MVP kha gon, de nang cap
 - Duong dan mo rong sang Moodle that da duoc nghien cuu trong `docs/`
 - Su dung stack pho bien, de recruit va mo rong sau hackathon
+- Da co bo test cho cac helper logic quan trong
 
 ## 5. Khoang cach giua source code hien tai va muc tieu san pham mong muon
 
@@ -110,16 +119,18 @@ Source code hien tai moi dat mot phan:
 - luu hoi thoai
 - danh gia tong quat theo hoi thoai
 - citation theo tai lieu
+- mastery tracking theo concept
+- event log hoc tap theo thoi gian
+- dashboard thong ke hoc tap
+- intervention engine rule-based
+- planner flow nhieu buoc
 
 ### 5.2 Chua co
 
-- concept graph hay taxonomy kien thuc cua tung mon hoc
-- mastery tracking theo tung concept
-- event log hoc tap theo thoi gian
-- dashboard thong ke tien trinh hoc tap
-- intervention engine de goi y hanh dong tiep theo
-- rule de phat hien khi nao can chuyen giang vien that
-- nhieu agent co vai tro rieng va output rieng
+- concept graph sau hon hoac taxonomy co cau truc cap cha-con
+- intervention workflow dua ra thong bao that
+- escalation workflow den giang vien that
+- nhieu agent chay doc lap o runtime va phoi hop qua orchestrator
 
 ## 6. Cac van de va rui ro can uu tien
 
@@ -141,9 +152,9 @@ Source code hien tai moi dat mot phan:
 - Neu session da co evaluation, he thong tra lai ban cu.
 - Sau khi user hoc them, ket qua khong cap nhat theo tien trinh moi.
 
-5. He thong chua co data model cho hoc tap theo concept.
-- Chua biet user dang yeu o khai niem nao.
-- Chua biet user dang tien bo hay thoai lui o ky nang nao.
+5. He thong da co concept tracking, nhung hien van la heuristic + rule-based.
+- Chua co taxonomy chuan hoa theo mon hoc.
+- Chua co khoa hoc/giang vien dinh nghia rubric rieng.
 
 ### 6.3 Rui ro khi pitch truoc ban giam khao
 
@@ -151,19 +162,25 @@ Source code hien tai moi dat mot phan:
 - Validator production chua duoc implement.
 - Nen pitch la "mock flow sat thuc te, san sang nang cap" thay vi "da ket noi that".
 
-7. Tai lieu ky thuat dang lech voi implementation.
+7. Multi-agent hien tai la workflow-level multi-agent, chua phai runtime orchestration.
+- Nen pitch la da co `Diagnosis / Planner / Tutor flow`.
+- Khong nen noi la da co he thong swarm agent hay orchestration phuc tap.
+
+8. Tai lieu ky thuat dang lech voi implementation.
 - Mot so docs cu van mo ta D1/Vectorize/Cloudflare.
 - Code runtime hien tai lai dung PostgreSQL + pgvector.
 - Neu BGK hoi sau, team can thong nhat mot cau tra loi duy nhat.
 
 ## 7. Danh gia muc do "multi-agent" cua san pham hien tai
 
-Neu danh gia nghiem tuc, he thong hien tai chua phai multi-agent. No dang co:
+Neu danh gia nghiem tuc, he thong hien tai chua phai multi-agent day du o runtime. Tuy nhien, no da co workflow ro rang de pitch theo huong multi-agent:
 
-- 1 agent chat hoc tap
-- 1 tac vu evaluation dung model rieng
+- `Diagnosis Agent`: phat hien lo hong kien thuc va concept yeu
+- `Planner Agent`: tao study plan nhieu buoc cho phien hoc tiep theo
+- `Tutor Agent`: tiep tuc hoi dap va huong dan hoc theo tai lieu
+- `Support / Intervention layer`: canh bao som va de xuat can thiệp
 
-De co the tu tin goi la multi-agent, can tach vai tro nghiep vu ro rang. De xuat:
+De co the tu tin goi la multi-agent manh hon nua, buoc tiep theo la tach runtime va orchestration ro rang hon.
 
 ### 7.1 Tutor Agent
 
@@ -488,4 +505,3 @@ Du an hien tai da co mot nen mong MVP rat phu hop de nop hackathon, dac biet man
 Neu duoc pitch dung cach, san pham nen duoc dinh vi la:
 
 > Nen tang AI learning copilot cho LMS, co kha nang mo rong thanh he thong multi-agent phan tich hoc tap va ho tro ca nhan hoa cho nguoi hoc tai Viet Nam.
-

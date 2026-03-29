@@ -10,7 +10,7 @@ Tai lieu nay dung de danh gia nhanh source code hien tai dang o muc nao, manh o 
 
 Source code hien tai dang o muc:
 
-**Hackathon-ready MVP da duoc hardening co ban**
+**Hackathon-ready AI learning copilot da duoc hardening va mo rong analytics**
 
 Neu quy doi thanh thang muc do 5 cap:
 
@@ -22,7 +22,7 @@ Neu quy doi thanh thang muc do 5 cap:
 
 Thi source code nay dang o:
 
-**Muc 3.5/5**
+**Muc 4-/5**
 
 Ly do:
 
@@ -30,8 +30,9 @@ Ly do:
 - da co chat, RAG, citation, session history, evaluation
 - da duoc bo sung mot so hardening ve quyen truy cap va cache
 - da co test cho nhom logic quan trong
-- da co concept tracking, learning events, va dashboard tracking hien thi tren UI
-- nhung chua co learning analytics day du, chua co multi-agent that, chua co production LTI that, chua dat muc production
+- da co concept tracking, learning events, timeline, intervention alerts, classroom dashboard va planner flow hien thi tren UI
+- da co cau truc `Diagnosis Agent -> Planner Agent -> Tutor Agent` o muc workflow
+- nhung chua co orchestration da agent that o runtime, chua co production LTI that, chua dat muc production
 
 ## 3. Nhung gi da co trong source hien tai
 
@@ -50,6 +51,10 @@ Ly do:
 - learning event timeline foundation
 - learning tracking dashboard tren trang evaluation
 - learning tracking summary ngay trong sidebar chat
+- classroom dashboard cho giang vien
+- timeline hoc tap theo ngay/nhiep hoat dong
+- intervention workflow va canh bao som
+- planner flow cho phien hoc tiep theo
 
 ### 3.2 Backend va data da co
 
@@ -71,6 +76,10 @@ Ly do:
 - persist concept mastery sau moi lan evaluation moi
 - them `learning_events` cho `chat` va `evaluation`
 - them API overview va UI tracking cho evaluation/sidebar
+- them classroom overview va dashboard cap lop
+- them rule engine intervention va alert panel
+- them planner engine sinh study plan nhieu buoc
+- thay parser PDF runtime bang `pdfjs-dist` va lam sach warning build
 
 ### 3.4 Test da co
 
@@ -85,6 +94,10 @@ Hien da co testcase cho:
 - learning event factory
 - learning overview aggregator
 - sidebar learning summary builder
+- classroom overview aggregator
+- intervention rules
+- planner flow generator
+- pdf text extraction helper
 
 Dieu nay nang du an tu muc "demo co code" len muc "MVP co logic kiem thu mot phan".
 
@@ -96,7 +109,7 @@ Dieu nay nang du an tu muc "demo co code" len muc "MVP co logic kiem thu mot pha
 - flow san pham ro, de ban giam khao trai nghiem
 - bai toan giao duc ro rang
 - citation tang do tin cay
-- evaluation, support plan, concept tracking va tracking dashboard giup san pham vuot qua chatbot hoi dap don thuan
+- evaluation, support plan, concept tracking, tracking dashboard, intervention va planner flow giup san pham vuot qua chatbot hoi dap don thuan
 
 ### 4.2 Manh ve ky thuat
 
@@ -104,6 +117,7 @@ Dieu nay nang du an tu muc "demo co code" len muc "MVP co logic kiem thu mot pha
 - data model MVP de doc va de nang cap
 - co script push schema, seed, ingest
 - build va typecheck da qua
+- build warning workspace root va pdf parser da duoc lam sach
 
 ## 5. Nhan dinh chinh xac ve muc do hien tai
 
@@ -116,12 +130,14 @@ Day chua phai la:
 
 Day dang la:
 
-- AI learning assistant MVP co RAG
+- AI learning copilot co RAG
 - co session history
 - co evaluation theo hoi thoai
-- co de xuat ho tro o muc rule-based
+- co de xuat ho tro o muc rule-based nang cao
 - co concept tracking o muc persisted va da hien thi tren UI
-- co learning event timeline o muc persisted va da co dashboard tong hop co ban
+- co learning event timeline o muc persisted va da co chart tren UI
+- co intervention workflow va classroom dashboard
+- co planner flow nhieu buoc de dinh huong phien hoc tiep theo
 - du tot de di thi hackathon neu pitch dung
 
 ## 6. Muc do hoan thien theo tung nhom
@@ -138,7 +154,7 @@ Nhan xet:
 
 ### 6.2 AI/RAG
 
-Muc do: **MVP da dung duoc**
+Muc do: **MVP manh cho hackathon**
 
 Nhan xet:
 
@@ -146,12 +162,13 @@ Nhan xet:
 - co embedding
 - co citation
 - co evaluation bang model rieng
+- co planner flow va support flow dua tren ket qua hoc tap
 
 Han che:
 
 - chua co verify citation sau sinh
 - chua co concept mapping
-- chua co orchestration nhieu agent
+- chua co orchestration nhieu agent that o runtime
 
 ### 6.3 Bao mat va access control
 
@@ -168,7 +185,7 @@ Han che:
 
 ### 6.4 Tracking va learning analytics
 
-Muc do: **Da co backend va UI co ban**
+Muc do: **Da kha day du o muc demo hackathon**
 
 Nhan xet:
 
@@ -179,12 +196,16 @@ Nhan xet:
 - da co mastery theo concept o muc nen tang
 - da co dashboard tracking tren trang evaluation
 - da co tom tat tracking ngay trong sidebar chat
+- da co timeline chart tren UI
+- da co classroom dashboard
+- da co intervention alerts
+- da co planner flow dua tren tracking + evaluation
 
 Han che:
 
-- chua co timeline/chart thong ke theo ngay-tuan-thang
-- chua co dashboard cho giang vien/lop hoc
-- chua co canh bao som hoac intervention workflow
+- chua co bo loc sau hon theo hoc ky/lop/nhom
+- chua co notification that hay escalation workflow den giang vien
+- chua co planner orchestration bang model rieng
 
 ### 6.5 Tich hop LMS/LTI
 
@@ -218,18 +239,21 @@ Danh gia thang than:
 - luu lich su hoi thoai
 - evaluation sau session
 - co phuong an ho tro o muc co ban
+- co thong ke va xem lai tien trinh hoc tap
+- co canh bao som va de xuat hanh dong
+- co planner flow nhieu buoc
 
 ### 7.2 Moi dat mot phan
 
 - tracking qua session va concept
-- support cho nguoi hoc
-- thong ke hoc tap o muc dashboard co ban
+- support chu dong cho nguoi hoc
+- multi-agent o muc workflow/pitch
 
 ### 7.3 Chua dat
 
-- multi-agent dung nghia
-- thong ke tien trinh hoc tap day du
-- dashboard giang vien / analytics
+- multi-agent dung nghia o runtime
+- thong bao/canh bao chu dong ra ngoai he thong
+- LTI production va tich hop nha truong that
 
 ## 8. Co phu hop de nop hackathon khong
 
@@ -239,7 +263,7 @@ Nhung cach pitch phai dung.
 
 Nen pitch la:
 
-> Nen tang AI learning copilot cho LMS, co RAG, citation, evaluation va support plan, san sang mo rong thanh he thong multi-agent learning analytics.
+> Nen tang AI learning copilot cho LMS, co RAG, citation, tracking, intervention va planner flow, san sang mo rong thanh he thong multi-agent learning analytics.
 
 Khong nen pitch la:
 
@@ -251,38 +275,38 @@ Khong nen pitch la:
 
 ### Uu tien 1
 
-Them timeline/chart thong ke tu `learning_events`
+Tach planner flow thanh service/agent doc lap hon
 
 Tac dung:
 
-- cho thay tien trinh hoc tap theo ngay/tuan
-- tang do thuyet phuc cua phan analytics
+- lam cau chuyen multi-agent thuyet phuc hon
+- de mo rong sang ke hoach hoc tap dong
 
 ### Uu tien 2
 
-Them dashboard cho giang vien / lop hoc
+Them escalation workflow den giang vien that
 
 Tac dung:
 
-- nhin duoc sinh vien nao dang yeu o concept nao
-- mo rong ro hon sang use case nha truong
+- bien intervention thanh hanh dong ngoai doi that
+- phu hop use case nha truong hon
 
 ### Uu tien 3
 
-Tach ro `Tutor Agent`, `Diagnosis Agent`, `Planner Agent`
+Them notification / reminder theo event va inactivity
 
 Tac dung:
 
-- co the pitch multi-agent thuyet phuc hon
+- giup canh bao som chu dong thay vi chi hien thi tren dashboard
 
 ### Uu tien 4
 
-Them intervention workflow va canh bao som
+Bo sung analytics sau hon cho giang vien / lop hoc
 
 Tac dung:
 
-- de xuat ro khi nao can tu hoc tiep, khi nao can hoi giang vien
-- gan hon voi bai toan ho tro hoc tap chu dong
+- bo loc theo nhom sinh vien, concept, giai doan hoc
+- tang gia tri B2B/B2G
 
 ### Uu tien 5
 
@@ -298,9 +322,9 @@ Source code hien tai khong con o muc y tuong hay mock UI nua. No da la mot MVP h
 
 Danh gia tong quat:
 
-- **Muc do hien tai:** Muc 3.5/5
-- **Tu khoa dung nhat:** Hackathon-ready MVP co learning analytics da len UI
-- **Gia tri hien tai:** RAG learning assistant + evaluation + support plan + concept tracking + tracking dashboard
-- **Khoang cach lon nhat:** chua co analytics cho giang vien/lop hoc va chua la multi-agent that
+- **Muc do hien tai:** Muc 4-/5
+- **Tu khoa dung nhat:** Hackathon-ready AI learning copilot co analytics, intervention va planner flow
+- **Gia tri hien tai:** RAG learning copilot + evaluation + tracking + classroom dashboard + intervention + planner flow
+- **Khoang cach lon nhat:** chua co orchestration multi-agent that va chua co LTI production
 
 Neu tiep tuc nang cap dung huong, du an nay co the di tu MVP demo sang mot nen tang learning analytics thong minh trong cac buoc tiep theo.
