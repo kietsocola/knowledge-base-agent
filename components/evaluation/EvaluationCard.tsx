@@ -10,6 +10,8 @@ import { Separator } from "@/components/ui/separator"
 import { EvaluationRadarChart } from "./RadarChart"
 import { LearningTrackingDashboard } from "./LearningTrackingDashboard"
 import { buildSupportPlan } from "@/lib/evaluation/support-plan"
+import { buildStudyPlan } from "@/lib/planner/study-plan"
+import { StudyPlanPanel } from "@/components/planner/StudyPlanPanel"
 import type { EvaluationResult } from "@/types/evaluation"
 import type { LearningOverview } from "@/types/learning"
 
@@ -50,6 +52,7 @@ export function EvaluationCard({
   viewerRole,
 }: EvaluationCardProps) {
   const supportPlan = buildSupportPlan(result)
+  const studyPlan = buildStudyPlan(result, overview)
   const supportTone = {
     high: {
       badge: "bg-rose-100 text-rose-700",
@@ -208,6 +211,14 @@ export function EvaluationCard({
           transition={{ delay: 0.33 }}
         >
           <LearningTrackingDashboard overview={overview} />
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.34 }}
+        >
+          <StudyPlanPanel plan={studyPlan} />
         </motion.div>
 
         <motion.div
