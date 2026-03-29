@@ -120,6 +120,16 @@ export const studentConceptMastery = pgTable(
   })
 );
 
+export const learningEvents = pgTable("learning_events", {
+  id: text("id").primaryKey(),
+  studentId: text("student_id").references(() => students.id).notNull(),
+  courseId: text("course_id").references(() => courses.id).notNull(),
+  sessionId: text("session_id").references(() => chatSessions.id).notNull(),
+  eventType: text("event_type").notNull(),
+  eventPayload: text("event_payload"),
+  createdAt: integer("created_at").default(sql`extract(epoch from now())::int`),
+});
+
 // Type exports for use in queries
 export type Student = typeof students.$inferSelect;
 export type Course = typeof courses.$inferSelect;
@@ -130,3 +140,4 @@ export type Message = typeof messages.$inferSelect;
 export type Evaluation = typeof evaluations.$inferSelect;
 export type CourseConcept = typeof courseConcepts.$inferSelect;
 export type StudentConceptMastery = typeof studentConceptMastery.$inferSelect;
+export type LearningEvent = typeof learningEvents.$inferSelect;

@@ -8,7 +8,8 @@ import { cookies } from "next/headers"
 import { getIronSession } from "iron-session"
 import { eq, asc } from "drizzle-orm"
 import { getDb } from "@/lib/db/index"
-import { messages, chatSessions, courses } from "@/lib/db/schema"
+import { messages, chatSessions, courses, learningEvents } from "@/lib/db/schema"
+import { createLearningEvent } from "@/lib/learning/events"
 import { getOpenAI, CHAT_MODEL } from "@/lib/llm/client"
 import { buildChatSystemPrompt } from "@/lib/llm/prompts"
 import { parseCitations, formatContextForPrompt } from "@/lib/llm/citations"
@@ -71,6 +72,7 @@ export async function POST(request: Request) {
 
   const trustedCourseId = trustedCourse.value
   const trustedCourseName = targetSession?.courseTitle ?? courseName ?? session.courseName ?? "môn học"
+  const trustedStudentId = session.studentId!
 
   // RAG: embed query and retrieve relevant chunks from Supabase pgvector
   let contextChunks: RetrievedChunk[] = []
@@ -133,6 +135,21 @@ export async function POST(request: Request) {
             .update(chatSessions)
             .set({ updatedAt: now + 1 })
             .where(eq(chatSessions.id, sessionId))
+
+          await db.insert(learningEvents).values(
+            createLearningEvent({
+              studentId: trustedStudentId,
+              courseId: trustedCourseId,
+              sessionId,
+              eventType: "chat_turn_recorded",
+              payload: {
+                questionLength: lastUserText.length,
+                citationCount: citations.length,
+                hadContext: contextChunks.length > 0,
+              },
+              createdAt: now + 1,
+            })
+          )
 
           const allMsgs = await db
             .select({ role: messages.role })

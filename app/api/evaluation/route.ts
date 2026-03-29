@@ -9,10 +9,12 @@ import {
   evaluations,
   courseConcepts,
   studentConceptMastery,
+  learningEvents,
 } from "@/lib/db/schema"
 import { generateEvaluation } from "@/lib/llm/evaluator"
 import { shouldReuseCachedEvaluation } from "@/lib/evaluation/cache"
 import { buildConceptMasterySignals } from "@/lib/learning/concepts"
+import { createLearningEvent } from "@/lib/learning/events"
 import { mergeConceptMastery } from "@/lib/learning/mastery"
 import { SESSION_OPTIONS } from "@/lib/session"
 import { authorizeOwnedSession } from "@/lib/security/session-authorization"
@@ -197,6 +199,21 @@ export async function POST(request: Request) {
           },
         })
     }
+
+    await db.insert(learningEvents).values(
+      createLearningEvent({
+        studentId: trustedStudentId,
+        courseId: access.value.courseId!,
+        sessionId,
+        eventType: "evaluation_generated",
+        payload: {
+          overallScore: result.overallScore,
+          conceptCount: conceptSignals.length,
+          recommendedTopics: result.recommendedTopics.slice(0, 3),
+        },
+        createdAt: now,
+      })
+    )
 
     return Response.json(result)
   } catch (error) {
